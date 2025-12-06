@@ -17,6 +17,7 @@ import {
   ShoppingCart,
   Truck,
   UserCircle,
+  BookOpen,
 } from "lucide-react"
 
 const menuItems = [
@@ -89,6 +90,20 @@ const menuItems = [
     icon: UserCircle,
     roles: ["Buyer"],
     color: "#EC4899",
+  },
+  {
+    title: "Educational Materials",
+    href: "/educational",
+    icon: BookOpen,
+    roles: ["Admin", "UMKM", "Buyer", "Forwarder"],
+    color: "#0284C7",
+  },
+  {
+    title: "Manage Educational",
+    href: "/educational/admin",
+    icon: BookOpen,
+    roles: ["Admin"],
+    color: "#0284C7",
   },
   {
     title: "Users",

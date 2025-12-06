@@ -19,8 +19,10 @@ import {
   MapPin,
   Building2,
   TrendingUp,
+  MessageCircle,
 } from "lucide-react"
 import type { BuyerProfile } from "@/lib/api/types"
+import { WhatsAppDialog } from "@/components/shared/WhatsAppDialog"
 
 export default function BuyerDetailPage() {
   const router = useRouter()
@@ -30,6 +32,7 @@ export default function BuyerDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
 
   const buyerId = params?.id as string
 
@@ -157,6 +160,14 @@ export default function BuyerDetailPage() {
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-[#0284C7]" />
                       <span className="text-[#0C4A6E]">{buyer.contact_info.phone}</span>
+                      <Button
+                        onClick={() => setWhatsappDialogOpen(true)}
+                        size="sm"
+                        className="ml-2 rounded-xl bg-[#25D366] hover:bg-[#20BA5A] text-white font-bold shadow-[0_2px_0_0_#16a34a] h-8 px-3"
+                      >
+                        <MessageCircle className="h-3 w-3 mr-1" />
+                        WhatsApp
+                      </Button>
                     </div>
                   )}
                   {buyer.contact_info.address && (
@@ -269,6 +280,17 @@ export default function BuyerDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* WhatsApp Dialog */}
+      {buyer?.contact_info.phone && (
+        <WhatsAppDialog
+          open={whatsappDialogOpen}
+          onOpenChange={setWhatsappDialogOpen}
+          phone={buyer.contact_info.phone}
+          recipientName={buyer.user_full_name}
+          recipientCompany={buyer.company_name}
+        />
+      )}
     </div>
   )
 }

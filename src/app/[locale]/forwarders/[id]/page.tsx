@@ -19,9 +19,11 @@ import {
   Package,
   MapPin,
   MessageSquare,
+  MessageCircle,
 } from "lucide-react"
 import type { ForwarderProfile, ForwarderReview } from "@/lib/api/types"
 import { ReviewModal } from "@/components/shared/ReviewModal"
+import { WhatsAppDialog } from "@/components/shared/WhatsAppDialog"
 
 export default function ForwarderDetailPage() {
   const router = useRouter()
@@ -183,6 +185,14 @@ export default function ForwarderDetailPage() {
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-[#0284C7]" />
                       <span className="text-[#0C4A6E]">{forwarder.contact_info.phone}</span>
+                      <Button
+                        onClick={() => setWhatsappDialogOpen(true)}
+                        size="sm"
+                        className="ml-2 rounded-xl bg-[#25D366] hover:bg-[#20BA5A] text-white font-bold shadow-[0_2px_0_0_#16a34a] h-8 px-3"
+                      >
+                        <MessageCircle className="h-3 w-3 mr-1" />
+                        WhatsApp
+                      </Button>
                     </div>
                   )}
                   {forwarder.contact_info.address && (
@@ -344,6 +354,17 @@ export default function ForwarderDetailPage() {
           onOpenChange={setReviewModalOpen}
           forwarderId={forwarder.id}
           onSuccess={handleReviewSuccess}
+        />
+      )}
+
+      {/* WhatsApp Dialog */}
+      {forwarder?.contact_info.phone && (
+        <WhatsAppDialog
+          open={whatsappDialogOpen}
+          onOpenChange={setWhatsappDialogOpen}
+          phone={forwarder.contact_info.phone}
+          recipientName={forwarder.user_full_name}
+          recipientCompany={forwarder.company_name}
         />
       )}
     </div>

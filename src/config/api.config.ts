@@ -110,6 +110,25 @@ export const API_ENDPOINTS = {
     profileUpdate: (id: string | number) => `/buyers/profile/${id}/`,
     detail: (id: string | number) => `/buyers/${id}/`,
   },
+  
+  // Educational Materials endpoints (Module 7)
+  educational: {
+    modules: {
+      list: '/educational/modules/',
+      create: '/educational/modules/',
+      detail: (id: string | number) => `/educational/modules/${id}/`,
+      update: (id: string | number) => `/educational/modules/${id}/`,
+      delete: (id: string | number) => `/educational/modules/${id}/`,
+    },
+    articles: {
+      list: '/educational/articles/',
+      create: '/educational/articles/',
+      detail: (id: string | number) => `/educational/articles/${id}/`,
+      update: (id: string | number) => `/educational/articles/${id}/`,
+      delete: (id: string | number) => `/educational/articles/${id}/`,
+      uploadFile: (id: string | number) => `/educational/articles/${id}/upload-file/`,
+    },
+  },
 } as const;
 
 

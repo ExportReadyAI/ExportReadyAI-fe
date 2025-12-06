@@ -78,6 +78,7 @@ export default function BuyerProfilePage() {
     annual_import_volume_description: "",
   })
   const [categoryRows, setCategoryRows] = useState<CategoryRow[]>([{ id: Date.now().toString(), value: "" }])
+  const [selectedCommonCategories, setSelectedCommonCategories] = useState<Set<string>>(new Set())
   const [selectedSourceCountries, setSelectedSourceCountries] = useState<Set<string>>(new Set())
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
@@ -149,22 +150,35 @@ export default function BuyerProfilePage() {
           annual_import_volume_description: profileData.annual_import_volume_description || "",
         })
 
-        const categories: CategoryRow[] = profileData.preferred_product_categories.length > 0
-          ? profileData.preferred_product_categories.map((cat) => ({
-              id: Date.now().toString() + Math.random(),
-              value: cat,
-            }))
+        // Separate common and custom categories
+        const commonCategories = profileData.preferred_product_categories.filter(cat => 
+          COMMON_PRODUCT_CATEGORIES.includes(cat)
+        )
+        const customCategories = profileData.preferred_product_categories.filter(cat => 
+          !COMMON_PRODUCT_CATEGORIES.includes(cat)
+        )
+        
+        // Store selected common categories in separate state
+        setSelectedCommonCategories(new Set(commonCategories))
+        
+        // Only store custom categories in categoryRows (rows are for "other" only)
+        // Always show at least one empty row for "other"
+        const categoryRowsData: CategoryRow[] = customCategories.length > 0
+          ? [...customCategories.map(cat => ({ id: Date.now().toString() + Math.random(), value: cat })), { id: Date.now().toString(), value: "" }]
           : [{ id: Date.now().toString(), value: "" }]
-        setCategoryRows(categories)
+        
+        setCategoryRows(categoryRowsData)
 
         setSelectedSourceCountries(new Set(profileData.source_countries))
       } else {
+        // No profile exists, start with empty form - one empty row for "other"
         setCategoryRows([{ id: Date.now().toString(), value: "" }])
       }
     } catch (err: any) {
       if (err.response?.status !== 404) {
         console.error("Error fetching profile:", err)
       }
+      // No profile exists, start with empty form - one empty row for "other"
       setCategoryRows([{ id: Date.now().toString(), value: "" }])
     } finally {
       setLoadingProfile(false)
@@ -197,13 +211,6 @@ export default function BuyerProfilePage() {
     if (errors.categories) {
       setErrors((prev) => ({ ...prev, categories: "" }))
     }
-  }
-
-  const handleAddCategoryRow = () => {
-    setCategoryRows((prev) => [
-      ...prev,
-      { id: Date.now().toString(), value: "" },
-    ])
   }
 
   const handleRemoveCategoryRow = (id: string) => {
@@ -240,11 +247,12 @@ export default function BuyerProfilePage() {
       newErrors.contact_phone = "Nomor telepon harus diisi"
     }
 
-    const validCategories = categoryRows
-      .filter((row) => row.value.trim())
+    // Check if at least one category is selected (common or custom)
+    const validCustomCategories = categoryRows
+      .filter((row) => row.value.trim() && !COMMON_PRODUCT_CATEGORIES.includes(row.value))
       .map((row) => row.value.trim())
     
-    if (validCategories.length === 0) {
+    if (selectedCommonCategories.size === 0 && validCustomCategories.length === 0) {
       newErrors.categories = "Minimal 1 kategori produk harus ditambahkan"
     }
 
@@ -267,9 +275,12 @@ export default function BuyerProfilePage() {
     setLoading(true)
 
     try {
-      const categories = categoryRows
-        .filter((row) => row.value.trim())
+      // Get categories from both selected checkboxes and custom input rows
+      const commonCategoriesList = Array.from(selectedCommonCategories)
+      const customCategories = categoryRows
+        .filter((row) => row.value.trim() && !COMMON_PRODUCT_CATEGORIES.includes(row.value))
         .map((row) => row.value.trim())
+      const categories = [...commonCategoriesList, ...customCategories]
 
       const payload: CreateBuyerProfileRequest = {
         ...formData,
@@ -307,7 +318,7 @@ export default function BuyerProfilePage() {
     if (formData.company_name.trim()) completed++
     if (formData.contact_info.email?.trim()) completed++
     if (formData.contact_info.phone?.trim()) completed++
-    if (categoryRows.some(r => r.value.trim())) completed++
+    if (selectedCommonCategories.size > 0 || categoryRows.some(r => r.value.trim() && !COMMON_PRODUCT_CATEGORIES.includes(r.value))) completed++
     if (selectedSourceCountries.size > 0) completed++
     if (formData.business_type) completed++
 
@@ -413,8 +424,8 @@ export default function BuyerProfilePage() {
           )}
 
           <form onSubmit={handleSubmit}>
-            <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe]">
-              <CardHeader className="bg-gradient-to-r from-[#FDF2F8] to-[#fce7f3] rounded-t-3xl -m-6 mb-6 p-6">
+            <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe] overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-[#FDF2F8] to-[#fce7f3] p-6">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EC4899] shadow-[0_4px_0_0_#db2777]">
                     <Building2 className="h-6 w-6 text-white" />
@@ -424,7 +435,7 @@ export default function BuyerProfilePage() {
                   </CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 p-6">
                 {/* Company Name */}
                 <div>
                   <Label htmlFor="company_name" className="text-[#0C4A6E] font-bold flex items-center gap-2">
@@ -606,15 +617,16 @@ export default function BuyerProfilePage() {
                   <Label className="text-[#0C4A6E] font-bold flex items-center gap-2 mb-2">
                     <Package className="h-5 w-5 text-[#EC4899]" />
                     Preferred Product Categories <span className="text-red-500">*</span>
-                    {categoryRows.some(r => r.value.trim()) && !errors.categories && (
+                    {(selectedCommonCategories.size > 0 || categoryRows.some(r => r.value.trim() && !COMMON_PRODUCT_CATEGORIES.includes(r.value))) && !errors.categories && (
                       <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
                     )}
                   </Label>
-                  <p className="text-sm text-gray-500 mb-4">Tambahkan kategori produk yang Anda minati</p>
+                  <p className="text-sm text-gray-500 mb-4">Pilih kategori produk yang Anda minati</p>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                  {/* Common Categories as Checkboxes */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                     {COMMON_PRODUCT_CATEGORIES.map((category) => {
-                      const isSelected = categoryRows.some(r => r.value === category)
+                      const isSelected = selectedCommonCategories.has(category)
                       return (
                         <label
                           key={category}
@@ -628,72 +640,94 @@ export default function BuyerProfilePage() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => {
-                              if (isSelected) {
-                                setCategoryRows(prev => prev.filter(r => r.value !== category))
-                              } else {
-                                setCategoryRows(prev => [...prev, { id: Date.now().toString(), value: category }])
+                              setSelectedCommonCategories((prev) => {
+                                const newSet = new Set(prev)
+                                if (newSet.has(category)) {
+                                  newSet.delete(category)
+                                } else {
+                                  newSet.add(category)
+                                }
+                                return newSet
+                              })
+                              if (errors.categories) {
+                                setErrors((prev) => ({ ...prev, categories: "" }))
                               }
                             }}
                             className="h-4 w-4 text-[#EC4899] rounded border-[#e0f2fe] focus:ring-[#EC4899]"
                           />
-                          <span className="text-sm font-medium text-[#0C4A6E]">{category}</span>
+                          <span className="text-sm font-medium text-[#0C4A6E] flex-1">{category}</span>
                           {isSelected && (
-                            <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#22C55E] flex-shrink-0" />
                           )}
                         </label>
                       )
                     })}
                   </div>
 
-                  <div className="space-y-3">
-                    {categoryRows.map((row) => {
-                      const hasValue = row.value.trim()
-                      const isCommon = COMMON_PRODUCT_CATEGORIES.includes(row.value)
-                      return (
-                        <div 
-                          key={row.id} 
-                          className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
-                            hasValue && !isCommon
-                              ? 'bg-green-50 border-[#22C55E]'
-                              : 'bg-[#FDF2F8] border-[#e0f2fe]'
-                          }`}
-                        >
-                          <Input
-                            value={row.value}
-                            onChange={(e) => handleCategoryChange(row.id, e.target.value)}
-                            placeholder="Ketik kategori produk lainnya..."
-                            className={`flex-1 rounded-xl border-2 pr-10 ${
-                              hasValue && !isCommon ? 'border-[#22C55E]' : 'border-[#e0f2fe]'
-                            }`}
-                          />
-                          {hasValue && !isCommon && (
-                            <CheckCircle2 className="h-5 w-5 text-[#22C55E] flex-shrink-0" />
-                          )}
-                          {categoryRows.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveCategoryRow(row.id)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                  {/* Other Categories - Input Rows Only */}
+                  <div className="mt-4 p-4 bg-gradient-to-r from-[#FDF2F8] to-[#fce7f3] rounded-2xl border-2 border-[#fce7f3]">
+                    <Label className="text-[#0C4A6E] font-bold mb-2 block flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-[#F59E0B]" />
+                      Kategori Lainnya (Opsional)
+                    </Label>
+                    <p className="text-sm text-gray-500 mb-3">Tambahkan kategori custom lainnya</p>
+                    
+                    <div className="space-y-3">
+                      {categoryRows
+                        .filter(row => !COMMON_PRODUCT_CATEGORIES.includes(row.value))
+                        .map((row) => {
+                          const hasValue = row.value.trim()
+                          const otherRows = categoryRows.filter(r => !COMMON_PRODUCT_CATEGORIES.includes(r.value))
+                          return (
+                            <div 
+                              key={row.id} 
+                              className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
+                                hasValue
+                                  ? 'bg-green-50 border-[#22C55E]'
+                                  : 'bg-white border-[#e0f2fe]'
+                              }`}
                             >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
+                              <Input
+                                value={row.value}
+                                onChange={(e) => handleCategoryChange(row.id, e.target.value)}
+                                placeholder="Ketik kategori produk lainnya..."
+                                className={`flex-1 rounded-xl border-2 pr-10 ${
+                                  hasValue ? 'border-[#22C55E]' : 'border-[#e0f2fe]'
+                                }`}
+                              />
+                              {hasValue && (
+                                <CheckCircle2 className="h-5 w-5 text-[#22C55E] flex-shrink-0" />
+                              )}
+                              {otherRows.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveCategoryRow(row.id)}
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          )
+                        })}
+                    </div>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddCategoryRow}
-                    className="mt-3 rounded-2xl border-2 border-[#EC4899] text-[#EC4899] hover:bg-[#FDF2F8]"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Tambah Kategori Lainnya
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        // Only add row for other categories (not common ones)
+                        const otherRows = categoryRows.filter(r => !COMMON_PRODUCT_CATEGORIES.includes(r.value))
+                        setCategoryRows(prev => [...prev, { id: Date.now().toString(), value: "" }])
+                      }}
+                      className="mt-3 rounded-2xl border-2 border-[#F59E0B] text-[#F59E0B] hover:bg-[#FEF3C7]"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Tambah Kategori Lainnya
+                    </Button>
+                  </div>
 
                   {errors.categories && (
                     <div className="mt-3 flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-xl border border-red-200">
