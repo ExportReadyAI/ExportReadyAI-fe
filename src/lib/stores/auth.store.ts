@@ -5,52 +5,53 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  // Add more user fields from your Django backend
-}
+import type { User, UserRole } from '@/lib/api/types';
 
 interface AuthState {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
 }
 
 interface AuthActions {
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
+  setAccessToken: (token: string) => void;
+  isAdmin: () => boolean;
+  isUMKM: () => boolean;
 }
 
 type AuthStore = AuthState & AuthActions;
 
 const initialState: AuthState = {
   user: null,
-  token: null,
+  accessToken: null,
+  refreshToken: null,
   isAuthenticated: false,
 };
 
 export const useAuthStore = create<AuthStore>()(
   devtools(
     persist(
-      (set) => ({
+      (set, get) => ({
         ...initialState,
         
-        setAuth: (user, token) => {
+        setAuth: (user, accessToken, refreshToken) => {
           // Store token in localStorage for API client
           if (typeof window !== 'undefined') {
-            localStorage.setItem('token', token);
+            localStorage.setItem('token', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
           }
-          set({ user, token, isAuthenticated: true });
+          set({ user, accessToken, refreshToken, isAuthenticated: true });
         },
         
         logout: () => {
-          // Clear token from localStorage
+          // Clear tokens from localStorage
           if (typeof window !== 'undefined') {
             localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
           }
           set(initialState);
         },
@@ -59,6 +60,23 @@ export const useAuthStore = create<AuthStore>()(
           set((state) => ({
             user: state.user ? { ...state.user, ...userData } : null,
           })),
+        
+        setAccessToken: (accessToken) => {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('token', accessToken);
+          }
+          set({ accessToken });
+        },
+        
+        isAdmin: () => {
+          const state = get();
+          return state.user?.role === 'Admin';
+        },
+        
+        isUMKM: () => {
+          const state = get();
+          return state.user?.role === 'UMKM';
+        },
       }),
       {
         name: 'auth-store',

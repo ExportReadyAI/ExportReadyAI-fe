@@ -1,49 +1,50 @@
+/* Import Nunito font - playful yet professional */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
 @import "tailwindcss";
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    /* ExportReady.AI Color Palette - Duolingo-inspired */
+    --primary: 201 94% 40%;          /* #0284C7 - Blue */
+    --primary-foreground: 0 0% 100%; /* White */
+    --primary-hover: 201 94% 35%;    /* Darker blue for hover */
+    
+    --secondary: 199 89% 74%;        /* #7DD3FC - Light Blue */
+    --secondary-foreground: 201 82% 24%; /* Navy */
+    
+    --accent: 38 92% 50%;            /* #F59E0B - Amber */
+    --accent-foreground: 0 0% 100%;  /* White */
+    
+    --background: 204 100% 97%;      /* #F0F9FF - Pale Blue */
+    --foreground: 201 82% 24%;       /* #0C4A6E - Navy */
+    
+    --card: 0 0% 100%;               /* White */
+    --card-foreground: 201 82% 24%;  /* Navy */
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --popover-foreground: 201 82% 24%;
+    
+    --muted: 199 89% 94%;            /* Very light blue */
+    --muted-foreground: 201 50% 45%;
+    
+    --destructive: 0 72% 51%;        /* Red */
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 71% 45%;          /* Green */
+    --success-foreground: 0 0% 100%;
+    
+    --border: 199 60% 85%;
+    --input: 199 60% 90%;
+    --ring: 201 94% 40%;
+    
+    --radius: 1rem;                  /* More rounded for Duolingo feel */
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 0 0 rgba(12, 74, 110, 0.1);
+    --shadow-md: 0 4px 0 0 rgba(12, 74, 110, 0.15);
+    --shadow-lg: 0 6px 0 0 rgba(12, 74, 110, 0.2);
+    --shadow-card: 0 4px 12px rgba(12, 74, 110, 0.08);
   }
 }
 
@@ -51,8 +52,75 @@
   * {
     border-color: hsl(var(--border));
   }
+  
+  html {
+    font-family: 'Nunito', system-ui, sans-serif;
+  }
+  
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: hsl(var(--foreground));
+  }
+  
+  h1 { font-size: 2.25rem; }
+  h2 { font-size: 1.875rem; }
+  h3 { font-size: 1.5rem; }
+  h4 { font-size: 1.25rem; }
+}
+
+/* Custom scrollbar */
+@layer utilities {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 100px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--secondary));
+    border-radius: 100px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}
+
+/* Animation utilities */
+@layer utilities {
+  .animate-bounce-sm {
+    animation: bounce-sm 0.3s ease-in-out;
+  }
+  
+  @keyframes bounce-sm {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  
+  .animate-pop {
+    animation: pop 0.2s ease-out;
+  }
+  
+  @keyframes pop {
+    0% { transform: scale(0.95); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+  
+  .transition-bounce {
+    transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }

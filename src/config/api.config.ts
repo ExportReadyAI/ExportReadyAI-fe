@@ -4,7 +4,7 @@
  */
 
 export const apiConfig = {
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
   timeout: 30000, // 30 seconds
   headers: {
     'Content-Type': 'application/json',
@@ -16,23 +16,40 @@ export const apiConfig = {
  * Define all your API endpoints here
  */
 export const API_ENDPOINTS = {
-  // Auth endpoints (if needed in future)
+  // Authentication endpoints
   auth: {
-    login: '/auth/login',
-    logout: '/auth/logout',
-    refresh: '/auth/refresh',
-    profile: '/auth/profile',
+    register: '/auth/register/',
+    login: '/auth/login/',
+    me: '/auth/me/',
+    refresh: '/auth/token/refresh/',
   },
   
-  // Add your Django API endpoints here
-  // Example:
-  // users: {
-  //   list: '/users',
-  //   detail: (id: string) => `/users/${id}`,
-  //   create: '/users',
-  //   update: (id: string) => `/users/${id}`,
-  //   delete: (id: string) => `/users/${id}`,
-  // },
+  // Business Profile endpoints
+  businessProfile: {
+    list: '/business-profile/',
+    create: '/business-profile/',
+    detail: (id: string | number) => `/business-profile/${id}/`,
+    update: (id: string | number) => `/business-profile/${id}/`,
+    certifications: (id: string | number) => `/business-profile/${id}/certifications/`,
+    dashboardSummary: '/business-profile/dashboard/summary/',
+  },
+  
+  // User Management endpoints (Admin)
+  users: {
+    list: '/users/',
+    detail: (id: string | number) => `/users/${id}/`,
+    delete: (id: string | number) => `/users/${id}/`,
+  },
+  
+  // Product endpoints
+  products: {
+    list: '/products/',
+    create: '/products/',
+    detail: (id: string | number) => `/products/${id}/`,
+    update: (id: string | number) => `/products/${id}/`,
+    delete: (id: string | number) => `/products/${id}/`,
+    enrich: (id: string | number) => `/products/${id}/enrich/`,
+  },
 } as const;
 
 

@@ -1,0 +1,913 @@
+{
+  "info": {
+    "_postman_id": "exportready-modul-2-products",
+    "name": "ExportReady.AI - Modul 2 Products & AI Services",
+    "description": "# ExportReady.AI - Modul 2: Manajemen Produk & AI Services\n\n## PBI Coverage:\n- **PBI-BE-M2-01**: GET /products - List products dengan pagination\n- **PBI-BE-M2-02**: GET /products/:id - Get product detail\n- **PBI-BE-M2-03**: POST /products - Create new product\n- **PBI-BE-M2-04**: PUT /products/:id - Update product\n- **PBI-BE-M2-05**: DELETE /products/:id - Delete product\n- **PBI-BE-M2-06**: AI HS Code Mapper (via Kolosal AI)\n- **PBI-BE-M2-07**: AI Description Rewriter (via Kolosal AI)\n- **PBI-BE-M2-08**: AI SKU Generator\n- **PBI-BE-M2-09**: POST /products/:id/enrich - Trigger AI Enrichment\n\n## How to Use:\n1. Run requests in order (Auth Flow first)\n2. Tokens are automatically saved to variables\n3. Test AI enrichment on different product types\n\n## Kolosal AI Integration:\n- Model: Claude Sonnet 4.5\n- Features: HS Code generation, B2B Description, SKU generation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Prerequisites - Auth Flow",
+      "description": "Setup authentication before testing Product APIs. Run these in order.",
+      "item": [
+        {
+          "name": "1. Register UMKM User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "    pm.test('✅ User registered successfully', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.user.role).to.eql('UMKM');",
+                  "    });",
+                  "} else if (pm.response.code === 409) {",
+                  "    pm.test('⚠️ User already exists - proceed to login', function () {",
+                  "        pm.expect(pm.response.code).to.eql(409);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"umkm.test@exportready.ai\",\n  \"password\": \"TestPassword123!\",\n  \"full_name\": \"UMKM Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register", ""]
+            },
+            "description": "**PBI-BE-M1-01**: Register new UMKM user\n\nDefault role: UMKM"
+          }
+        },
+        {
+          "name": "2. Login & Get Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.tokens.access);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.data.tokens.refresh);",
+                  "    pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "    ",
+                  "    pm.test('✅ Login successful - token saved', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.tokens.access).to.not.be.empty;",
+                  "    });",
+                  "    ",
+                  "    console.log('Access Token:', jsonData.data.tokens.access.substring(0, 50) + '...');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"umkm.test@exportready.ai\",\n  \"password\": \"TestPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login", ""]
+            },
+            "description": "**PBI-BE-M1-02**: Login and get JWT tokens\n\nToken will be automatically saved to `access_token` variable."
+          }
+        },
+        {
+          "name": "3. Create Business Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('business_id', jsonData.data.id);",
+                  "    ",
+                  "    pm.test('✅ Business profile created', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.company_name).to.not.be.empty;",
+                  "    });",
+                  "} else if (pm.response.code === 409) {",
+                  "    pm.test('⚠️ Business profile already exists', function () {",
+                  "        pm.expect(pm.response.code).to.eql(409);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"PT Eksport Maju Bersama\",\n  \"address\": \"Jl. Raya Industri No. 123, Kawasan Industri MM2100, Bekasi, Jawa Barat 17530\",\n  \"production_capacity_per_month\": 10000,\n  \"year_established\": 2018\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/business-profile/",
+              "host": ["{{base_url}}"],
+              "path": ["business-profile", ""]
+            },
+            "description": "**PBI-BE-M1-04**: Create business profile (required before creating products)\n\n⚠️ IMPORTANT: Must create business profile before creating any products!"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Product CRUD (PBI-M2-01 to M2-05)",
+      "description": "Product management endpoints - Create, Read, Update, Delete",
+      "item": [
+        {
+          "name": "Create Product - Makanan (Keripik Singkong)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('product_id', jsonData.data.id);",
+                  "    pm.collectionVariables.set('product_id_food', jsonData.data.id);",
+                  "    ",
+                  "    pm.test('✅ PBI-M2-03: Product created successfully', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.id).to.be.a('number');",
+                  "        pm.expect(jsonData.data.name_local).to.eql('Keripik Singkong Pedas Manis');",
+                  "    });",
+                  "    ",
+                  "    console.log('Product ID:', jsonData.data.id);",
+                  "} else {",
+                  "    console.log('Error:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_local\": \"Keripik Singkong Pedas Manis\",\n  \"category_id\": 1,\n  \"description_local\": \"Keripik singkong renyah dengan bumbu pedas manis khas Indonesia. Dibuat dari singkong pilihan berkualitas tinggi yang digoreng hingga renyah sempurna. Cocok untuk camilan sehari-hari maupun oleh-oleh.\",\n  \"material_composition\": \"Singkong (85%), Minyak Kelapa Sawit (10%), Gula Merah (2%), Cabai Bubuk (2%), Garam (1%)\",\n  \"production_technique\": \"Machine\",\n  \"finishing_type\": \"Vacuum Sealed\",\n  \"quality_specs\": {\n    \"moisture_content\": \"3%\",\n    \"crispiness\": \"High\",\n    \"shelf_life\": \"6 months\",\n    \"halal_certified\": true\n  },\n  \"durability_claim\": \"6 Bulan dalam kemasan tertutup\",\n  \"packaging_type\": \"Aluminium Foil Pouch\",\n  \"dimensions_l_w_h\": {\n    \"l\": 25,\n    \"w\": 18,\n    \"h\": 8\n  },\n  \"weight_net\": \"0.250\",\n  \"weight_gross\": \"0.280\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/",
+              "host": ["{{base_url}}"],
+              "path": ["products", ""]
+            },
+            "description": "**PBI-BE-M2-03**: Create new product\n\n**Category**: Makanan Olahan (Food)\n**Product**: Keripik Singkong Pedas Manis\n\nThis product will be used to test AI enrichment for food category.\n\nExpected AI Results:\n- HS Code: ~2008 (Prepared vegetables/fruits)\n- SKU: Format {CAT}-{MAT}-{SEQ}"
+          }
+        },
+        {
+          "name": "Create Product - Kerajinan (Tas Rotan)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('product_id_craft', jsonData.data.id);",
+                  "    ",
+                  "    pm.test('✅ PBI-M2-03: Craft product created', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.name_local).to.include('Rotan');",
+                  "    });",
+                  "    ",
+                  "    console.log('Craft Product ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_local\": \"Tas Rotan Bali Handmade\",\n  \"category_id\": 2,\n  \"description_local\": \"Tas rotan asli Bali buatan tangan pengrajin lokal. Dibuat dari rotan pilihan dengan anyaman tradisional yang kuat dan tahan lama. Cocok untuk fashion wanita modern dengan sentuhan etnik Indonesia.\",\n  \"material_composition\": \"Rotan Alam (90%), Kulit Sapi (8%), Kain Batik (2%)\",\n  \"production_technique\": \"Handmade\",\n  \"finishing_type\": \"Natural Polish\",\n  \"quality_specs\": {\n    \"weaving_type\": \"Traditional Balinese\",\n    \"durability\": \"5+ years\",\n    \"water_resistant\": false,\n    \"artisan_made\": true\n  },\n  \"durability_claim\": \"5 Tahun dengan perawatan baik\",\n  \"packaging_type\": \"Kardus dengan Dust Bag\",\n  \"dimensions_l_w_h\": {\n    \"l\": 30,\n    \"w\": 12,\n    \"h\": 25\n  },\n  \"weight_net\": \"0.350\",\n  \"weight_gross\": \"0.500\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/",
+              "host": ["{{base_url}}"],
+              "path": ["products", ""]
+            },
+            "description": "**PBI-BE-M2-03**: Create new product\n\n**Category**: Kerajinan Tangan (Handicraft)\n**Product**: Tas Rotan Bali Handmade\n\nExpected AI Results:\n- HS Code: ~4602 (Basketwork/wickerwork)\n- English Name: Handwoven Rattan Bag\n- SKU: Format {CAT}-{MAT}-{SEQ}"
+          }
+        },
+        {
+          "name": "Create Product - Tekstil (Batik Tulis)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('product_id_textile', jsonData.data.id);",
+                  "    ",
+                  "    pm.test('✅ PBI-M2-03: Textile product created', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.name_local).to.include('Batik');",
+                  "    });",
+                  "    ",
+                  "    console.log('Textile Product ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_local\": \"Kain Batik Tulis Motif Parang\",\n  \"category_id\": 3,\n  \"description_local\": \"Kain batik tulis premium dengan motif Parang klasik Yogyakarta. Dibuat dengan teknik canting tradisional oleh pengrajin berpengalaman. Pewarna alami dari tumbuhan lokal. Cocok untuk busana formal dan koleksi.\",\n  \"material_composition\": \"Katun Prima (100%)\",\n  \"production_technique\": \"Handmade\",\n  \"finishing_type\": \"Traditional Wax Resist\",\n  \"quality_specs\": {\n    \"thread_count\": \"200 TC\",\n    \"dye_type\": \"Natural Plant-based\",\n    \"motif\": \"Parang Rusak Barong\",\n    \"origin\": \"Yogyakarta\",\n    \"unesco_heritage\": true\n  },\n  \"durability_claim\": \"Warna tahan 50+ kali cuci\",\n  \"packaging_type\": \"Gift Box dengan Sertifikat\",\n  \"dimensions_l_w_h\": {\n    \"l\": 250,\n    \"w\": 110,\n    \"h\": 1\n  },\n  \"weight_net\": \"0.300\",\n  \"weight_gross\": \"0.450\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/",
+              "host": ["{{base_url}}"],
+              "path": ["products", ""]
+            },
+            "description": "**PBI-BE-M2-03**: Create new product\n\n**Category**: Tekstil (Textile)\n**Product**: Kain Batik Tulis Motif Parang\n\nExpected AI Results:\n- HS Code: ~5208/5209 (Cotton woven fabrics)\n- English Name: Hand-drawn Batik Fabric\n- SKU: Format {CAT}-{MAT}-{SEQ}"
+          }
+        },
+        {
+          "name": "List All Products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M2-01: Products listed with pagination', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.results).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Pagination info present', function () {",
+                  "    pm.expect(jsonData.count).to.be.a('number');",
+                  "});",
+                  "",
+                  "console.log('Total products:', jsonData.count);",
+                  "console.log('Products on this page:', jsonData.results.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["products", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "**PBI-BE-M2-01**: List all products with pagination\n\n**Query Parameters:**\n- `page`: Page number (default: 1)\n- `limit`: Items per page (default: 10)\n\n**Access Control:**\n- UMKM: Only sees their own products\n- Admin: Sees all products"
+          }
+        },
+        {
+          "name": "Get Product Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M2-02: Product detail retrieved', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.id).to.be.a('number');",
+                  "    pm.expect(jsonData.name_local).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test('Product has enrichment field', function () {",
+                  "    pm.expect(jsonData).to.have.property('enrichment');",
+                  "});",
+                  "",
+                  "console.log('Product:', jsonData.name_local);",
+                  "if (jsonData.enrichment) {",
+                  "    console.log('HS Code:', jsonData.enrichment.hs_code_recommendation);",
+                  "    console.log('SKU:', jsonData.enrichment.sku_generated);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", ""]
+            },
+            "description": "**PBI-BE-M2-02**: Get product detail by ID\n\nIncludes `enrichment` field with AI-generated data (if enriched):\n- hs_code_recommendation\n- sku_generated\n- name_english_b2b\n- description_english_b2b\n- marketing_highlights"
+          }
+        },
+        {
+          "name": "Update Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M2-04: Product updated successfully', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.name_local).to.include('Premium');",
+                  "});",
+                  "",
+                  "console.log('Updated product:', jsonData.name_local);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_local\": \"Keripik Singkong Premium Pedas Manis\",\n  \"category_id\": 1,\n  \"description_local\": \"Keripik singkong PREMIUM renyah dengan bumbu pedas manis khas Indonesia. Dibuat dari singkong pilihan berkualitas EXPORT GRADE yang digoreng hingga renyah sempurna. Best seller untuk pasar internasional.\",\n  \"material_composition\": \"Singkong Premium (88%), Minyak Kelapa (8%), Gula Aren (2%), Cabai Pilihan (1.5%), Garam Laut (0.5%)\",\n  \"production_technique\": \"Machine\",\n  \"finishing_type\": \"Nitrogen Flush Packaging\",\n  \"quality_specs\": {\n    \"moisture_content\": \"2%\",\n    \"crispiness\": \"Extra High\",\n    \"shelf_life\": \"12 months\",\n    \"halal_certified\": true,\n    \"export_grade\": true\n  },\n  \"durability_claim\": \"12 Bulan dalam kemasan nitrogen\",\n  \"packaging_type\": \"Premium Aluminium Foil Stand Pouch\",\n  \"dimensions_l_w_h\": {\n    \"l\": 28,\n    \"w\": 20,\n    \"h\": 10\n  },\n  \"weight_net\": \"0.300\",\n  \"weight_gross\": \"0.350\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", ""]
+            },
+            "description": "**PBI-BE-M2-04**: Update existing product\n\nAll fields are replaced with new values.\n\n**Access Control:**\n- UMKM: Can only update their own products\n- Admin: Can update any product"
+          }
+        },
+        {
+          "name": "Delete Product (Use with caution)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('✅ PBI-M2-05: Product deleted', function () {",
+                  "pm.test('✅ PBI-M2-05: Product deleted with success message', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.message).to.include('deleted successfully');",
+                  "});",
+                  "",
+                  "console.log('Response:', jsonData.message);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id_to_delete}}/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id_to_delete}}", ""]
+            },
+            "description": "**PBI-BE-M2-05**: Delete product by ID\n\n⚠️ **CAUTION**: This action is irreversible!\n\nSet `product_id_to_delete` variable before running.\n\n**Access Control:**\n- UMKM: Can only delete their own products\n- Admin: Can delete any product"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. AI Enrichment (PBI-M2-06 to M2-09)",
+      "description": "AI-powered product enrichment using Kolosal AI (Claude Sonnet 4.5)",
+      "item": [
+        {
+          "name": "Enrich Product - Food (Keripik)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M2-09: AI Enrichment triggered successfully', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('✅ PBI-M2-06: HS Code generated (8 digits)', function () {",
+                  "    pm.expect(jsonData.data.hs_code_recommendation).to.match(/^\\d{8}$/);",
+                  "});",
+                  "",
+                  "pm.test('✅ PBI-M2-08: SKU generated (CAT-MAT-SEQ format)', function () {",
+                  "    pm.expect(jsonData.data.sku_generated).to.match(/^[A-Z]{3}-[A-Z]{3}-\\d{3}$/);",
+                  "});",
+                  "",
+                  "pm.test('✅ PBI-M2-07: English B2B description generated', function () {",
+                  "    pm.expect(jsonData.data.description_english_b2b).to.not.be.empty;",
+                  "    pm.expect(jsonData.data.description_english_b2b.length).to.be.above(50);",
+                  "});",
+                  "",
+                  "pm.test('English product name generated', function () {",
+                  "    pm.expect(jsonData.data.name_english_b2b).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test('Marketing highlights generated', function () {",
+                  "    pm.expect(jsonData.data.marketing_highlights).to.be.an('array');",
+                  "});",
+                  "",
+                  "console.log('=== AI ENRICHMENT RESULTS ===');",
+                  "console.log('HS Code:', jsonData.data.hs_code_recommendation);",
+                  "console.log('SKU:', jsonData.data.sku_generated);",
+                  "console.log('English Name:', jsonData.data.name_english_b2b);",
+                  "console.log('English Description:', jsonData.data.description_english_b2b.substring(0, 200) + '...');",
+                  "console.log('Marketing Highlights:', jsonData.data.marketing_highlights);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/enrich/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", "enrich", ""]
+            },
+            "description": "**PBI-BE-M2-09**: Trigger AI enrichment for food product\n\n**AI Services Called:**\n- **PBI-M2-06**: AI HS Code Mapper\n  - Input: name, material, category, description\n  - Output: 8-digit HS Code\n  - Fallback: \"00000000\"\n\n- **PBI-M2-07**: AI Description Rewriter\n  - Input: description_local, name, material\n  - Output: English B2B description (max 300 words)\n\n- **PBI-M2-08**: AI SKU Generator\n  - Input: category, material, product_id, business_id\n  - Output: Format CAT-MAT-SEQ (e.g., BAG-LTH-001)\n\n**Expected Results for Keripik Singkong:**\n- HS Code: 2008xxxx (Prepared fruits/vegetables)\n- SKU: e.g., SIN-SIN-001"
+          }
+        },
+        {
+          "name": "Enrich Product - Craft (Tas Rotan)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ AI Enrichment for craft product', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('HS Code is 8 digits', function () {",
+                  "    pm.expect(jsonData.data.hs_code_recommendation).to.match(/^\\d{8}$/);",
+                  "});",
+                  "",
+                  "pm.test('SKU format valid', function () {",
+                  "    pm.expect(jsonData.data.sku_generated).to.match(/^[A-Z]{3}-[A-Z]{3}-\\d{3}$/);",
+                  "});",
+                  "",
+                  "console.log('=== CRAFT PRODUCT AI RESULTS ===');",
+                  "console.log('HS Code:', jsonData.data.hs_code_recommendation);",
+                  "console.log('SKU:', jsonData.data.sku_generated);",
+                  "console.log('English Name:', jsonData.data.name_english_b2b);",
+                  "console.log('Highlights:', jsonData.data.marketing_highlights);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id_craft}}/enrich/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id_craft}}", "enrich", ""]
+            },
+            "description": "**PBI-BE-M2-09**: Trigger AI enrichment for handicraft product (Tas Rotan)\n\n**Expected Results:**\n- HS Code: 4602xxxx (Basketwork, wickerwork)\n- English Name: Something like \"Handwoven Rattan Bag\"\n- Highlights: Handmade, Eco-friendly, Traditional craft"
+          }
+        },
+        {
+          "name": "Enrich Product - Textile (Batik)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ AI Enrichment for textile product', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('HS Code is 8 digits', function () {",
+                  "    pm.expect(jsonData.data.hs_code_recommendation).to.match(/^\\d{8}$/);",
+                  "});",
+                  "",
+                  "pm.test('Description mentions batik or traditional', function () {",
+                  "    var desc = jsonData.data.description_english_b2b.toLowerCase();",
+                  "    pm.expect(desc).to.satisfy(function(d) {",
+                  "        return d.includes('batik') || d.includes('traditional') || d.includes('hand');",
+                  "    });",
+                  "});",
+                  "",
+                  "console.log('=== TEXTILE PRODUCT AI RESULTS ===');",
+                  "console.log('HS Code:', jsonData.data.hs_code_recommendation);",
+                  "console.log('SKU:', jsonData.data.sku_generated);",
+                  "console.log('English Name:', jsonData.data.name_english_b2b);",
+                  "console.log('Description preview:', jsonData.data.description_english_b2b.substring(0, 300) + '...');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id_textile}}/enrich/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id_textile}}", "enrich", ""]
+            },
+            "description": "**PBI-BE-M2-09**: Trigger AI enrichment for textile product (Batik)\n\n**Expected Results:**\n- HS Code: 5208xxxx or 5209xxxx (Cotton woven fabrics)\n- English Name: Something like \"Hand-drawn Batik Fabric\"\n- Description: Should mention UNESCO heritage, traditional technique"
+          }
+        },
+        {
+          "name": "Get Enriched Product Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Product has enrichment data', function () {",
+                  "    pm.expect(jsonData.enrichment).to.not.be.null;",
+                  "});",
+                  "",
+                  "pm.test('Enrichment has all AI fields', function () {",
+                  "    var e = jsonData.enrichment;",
+                  "    pm.expect(e.hs_code_recommendation).to.not.be.empty;",
+                  "    pm.expect(e.sku_generated).to.not.be.empty;",
+                  "    pm.expect(e.name_english_b2b).to.not.be.empty;",
+                  "    pm.expect(e.description_english_b2b).to.not.be.empty;",
+                  "    pm.expect(e.marketing_highlights).to.be.an('array');",
+                  "});",
+                  "",
+                  "console.log('=== FULL ENRICHED PRODUCT ===');",
+                  "console.log('Local Name:', jsonData.name_local);",
+                  "console.log('English Name:', jsonData.enrichment.name_english_b2b);",
+                  "console.log('HS Code:', jsonData.enrichment.hs_code_recommendation);",
+                  "console.log('SKU:', jsonData.enrichment.sku_generated);",
+                  "console.log('Last AI Update:', jsonData.enrichment.last_updated_ai);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", ""]
+            },
+            "description": "Get product detail AFTER enrichment to verify all AI data is saved.\n\n**Enrichment fields:**\n- `hs_code_recommendation`: 8-digit HS Code\n- `sku_generated`: Format CAT-MAT-SEQ\n- `name_english_b2b`: Professional English product name\n- `description_english_b2b`: B2B marketing description\n- `marketing_highlights`: Array of selling points\n- `last_updated_ai`: Timestamp of last AI enrichment"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Error Cases",
+      "description": "Test error handling and validation",
+      "item": [
+        {
+          "name": "Create Product - Missing Required Field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 Bad Request', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message present', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('name_local');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": 1,\n  \"description_local\": \"Missing name_local field\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/",
+              "host": ["{{base_url}}"],
+              "path": ["products", ""]
+            },
+            "description": "Test validation: Missing required `name_local` field\n\nExpected: 400 Bad Request with validation error"
+          }
+        },
+        {
+          "name": "Get Product - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 404 Not Found', function () {",
+                  "    pm.expect(pm.response.code).to.eql(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/99999/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "99999", ""]
+            },
+            "description": "Test 404 handling for non-existent product"
+          }
+        },
+        {
+          "name": "Enrich Product - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 404 Not Found', function () {",
+                  "    pm.expect(pm.response.code).to.eql(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/99999/enrich/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "99999", "enrich", ""]
+            },
+            "description": "Test 404 handling for enrichment on non-existent product"
+          }
+        },
+        {
+          "name": "Access Without Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 401 Unauthorized', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products/",
+              "host": ["{{base_url}}"],
+              "path": ["products", ""]
+            },
+            "description": "Test authentication guard - no token provided\n\nExpected: 401 Unauthorized"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set default base_url if not set",
+          "if (!pm.collectionVariables.get('base_url')) {",
+          "    pm.collectionVariables.set('base_url', 'http://localhost:8000/api/v1');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "business_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id_food",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id_craft",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id_textile",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id_to_delete",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
