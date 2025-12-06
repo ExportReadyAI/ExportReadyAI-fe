@@ -24,6 +24,16 @@ import type {
   EnrichProductResponse,
   ManualOverrideRequest,
   PaginatedResponse,
+  Country,
+  CountryDetail,
+  ExportAnalysis,
+  CreateExportAnalysisRequest,
+  CompareCountriesRequest,
+  CompareCountriesResponse,
+  Costing,
+  CreateCostingRequest,
+  UpdateCostingRequest,
+  CurrencySettings,
 } from './types';
 
 /**
@@ -166,6 +176,79 @@ export const productService = {
     patch<Product>(API_ENDPOINTS.products.detail(id), {
       enrichment: data,
     }),
+};
+
+// ==================== Country Services ====================
+
+export const countryService = {
+  list: (params?: { region?: string; search?: string }) =>
+    get<Country[]>(API_ENDPOINTS.countries.list, { params }),
+  
+  get: (code: string) =>
+    get<CountryDetail>(API_ENDPOINTS.countries.detail(code)),
+};
+
+// ==================== Export Analysis Services ====================
+
+export const exportAnalysisService = {
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    country_code?: string;
+    score_min?: number;
+    score_max?: number;
+    search?: string;
+  }) =>
+    get<ExportAnalysis[] | PaginatedResponse<ExportAnalysis>>(
+      API_ENDPOINTS.exportAnalysis.list,
+      { params }
+    ),
+  
+  get: (id: string | number) =>
+    get<ExportAnalysis>(API_ENDPOINTS.exportAnalysis.detail(id)),
+  
+  create: (data: CreateExportAnalysisRequest) =>
+    post<ExportAnalysis>(API_ENDPOINTS.exportAnalysis.create, data),
+  
+  delete: (id: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.exportAnalysis.delete(id)),
+  
+  reanalyze: (id: string | number) =>
+    post<ExportAnalysis>(API_ENDPOINTS.exportAnalysis.reanalyze(id)),
+  
+  compare: (data: CompareCountriesRequest) =>
+    post<CompareCountriesResponse>(API_ENDPOINTS.exportAnalysis.compare, data),
+};
+
+// ==================== Costing Services ====================
+
+export const costingService = {
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sort_by?: 'fob_price' | 'created_at';
+    sort_order?: 'asc' | 'desc';
+  }) =>
+    get<Costing[] | PaginatedResponse<Costing>>(
+      API_ENDPOINTS.costing.list,
+      { params }
+    ),
+  
+  get: (id: string | number) =>
+    get<Costing>(API_ENDPOINTS.costing.detail(id)),
+  
+  create: (data: CreateCostingRequest) =>
+    post<Costing>(API_ENDPOINTS.costing.create, data),
+  
+  update: (id: string | number, data: UpdateCostingRequest) =>
+    put<Costing>(API_ENDPOINTS.costing.update(id), data),
+  
+  delete: (id: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.costing.delete(id)),
+  
+  getCurrencySettings: () =>
+    get<CurrencySettings>(API_ENDPOINTS.costing.currencySettings),
 };
 
 

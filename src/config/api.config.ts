@@ -50,6 +50,32 @@ export const API_ENDPOINTS = {
     delete: (id: string | number) => `/products/${id}/`,
     enrich: (id: string | number) => `/products/${id}/enrich/`,
   },
+  
+  // Country endpoints
+  countries: {
+    list: '/countries/',
+    detail: (code: string) => `/countries/${code}/`,
+  },
+  
+  // Export Analysis endpoints
+  exportAnalysis: {
+    list: '/export-analysis/',
+    create: '/export-analysis/create/',
+    detail: (id: string | number) => `/export-analysis/${id}/`,
+    delete: (id: string | number) => `/export-analysis/${id}/`,
+    reanalyze: (id: string | number) => `/export-analysis/${id}/reanalyze/`,
+    compare: '/export-analysis/compare/',
+  },
+  
+  // Costing endpoints
+  costing: {
+    list: '/costings/',
+    create: '/costings/',
+    detail: (id: string | number) => `/costings/${id}/`,
+    update: (id: string | number) => `/costings/${id}/`,
+    delete: (id: string | number) => `/costings/${id}/`,
+    currencySettings: '/costings/currency-settings/',
+  },
 } as const;
 
 

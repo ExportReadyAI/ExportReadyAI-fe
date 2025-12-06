@@ -12,6 +12,8 @@ import {
   LogOut,
   Sparkles,
   Rocket,
+  FileText,
+  Calculator,
 } from "lucide-react"
 
 const menuItems = [
@@ -35,6 +37,20 @@ const menuItems = [
     icon: Package,
     roles: ["Admin", "UMKM"],
     color: "#F59E0B",
+  },
+  {
+    title: "Export Analysis",
+    href: "/export-analysis",
+    icon: FileText,
+    roles: ["Admin", "UMKM"],
+    color: "#0284C7",
+  },
+  {
+    title: "Costing",
+    href: "/costing",
+    icon: Calculator,
+    roles: ["Admin", "UMKM"],
+    color: "#22C55E",
   },
   {
     title: "Users",
