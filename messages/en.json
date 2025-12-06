@@ -1,0 +1,35 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "products": "Products",
+    "contact": "Contact"
+  },
+  "common": {
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success!",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import"
+  },
+  "home": {
+    "title": "Export Management System",
+    "subtitle": "Manage your export operations efficiently",
+    "getStarted": "Get Started"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "serverError": "Server error occurred",
+    "unauthorized": "You are not authorized",
+    "networkError": "Network connection failed"
+  }
+}
+
+
