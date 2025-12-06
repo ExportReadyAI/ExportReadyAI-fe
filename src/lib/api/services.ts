@@ -49,6 +49,12 @@ import type {
   BuyerProfile,
   CreateBuyerProfileRequest,
   UpdateBuyerProfileRequest,
+  EducationalModule,
+  EducationalArticle,
+  CreateEducationalModuleRequest,
+  UpdateEducationalModuleRequest,
+  CreateEducationalArticleRequest,
+  UpdateEducationalArticleRequest,
 } from './types';
 
 /**
@@ -372,6 +378,52 @@ export const buyerProfileService = {
   
   updateProfile: (id: string | number, data: UpdateBuyerProfileRequest) =>
     put<BuyerProfile>(API_ENDPOINTS.buyers.profileUpdate(id), data),
+};
+
+// Educational Materials Service (Module 7)
+export const educationalService = {
+  // Modules
+  modules: {
+    list: (params?: { page?: number; limit?: number }) =>
+      get<EducationalModule[] | ApiResponse<EducationalModule[]>>(
+        API_ENDPOINTS.educational.modules.list,
+        { params }
+      ),
+    get: (id: string | number) =>
+      get<EducationalModule>(API_ENDPOINTS.educational.modules.detail(id)),
+    create: (data: CreateEducationalModuleRequest) =>
+      post<EducationalModule>(API_ENDPOINTS.educational.modules.create, data),
+    update: (id: string | number, data: UpdateEducationalModuleRequest) =>
+      put<EducationalModule>(API_ENDPOINTS.educational.modules.update(id), data),
+    delete: (id: string | number) =>
+      apiClient.delete(API_ENDPOINTS.educational.modules.delete(id)),
+  },
+  // Articles
+  articles: {
+    list: (params?: { module_id?: number; page?: number; limit?: number }) =>
+      get<EducationalArticle[] | ApiResponse<EducationalArticle[]>>(
+        API_ENDPOINTS.educational.articles.list,
+        { params }
+      ),
+    get: (id: string | number) =>
+      get<EducationalArticle>(API_ENDPOINTS.educational.articles.detail(id)),
+    create: (data: CreateEducationalArticleRequest) =>
+      post<EducationalArticle>(API_ENDPOINTS.educational.articles.create, data),
+    update: (id: string | number, data: UpdateEducationalArticleRequest) =>
+      put<EducationalArticle>(API_ENDPOINTS.educational.articles.update(id), data),
+    delete: (id: string | number) =>
+      apiClient.delete(API_ENDPOINTS.educational.articles.delete(id)),
+    uploadFile: (id: string | number, file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      // Don't set Content-Type header - axios interceptor will handle it automatically for FormData
+      // The browser will set Content-Type with boundary automatically
+      return apiClient.post<ApiResponse<EducationalArticle>>(
+        API_ENDPOINTS.educational.articles.uploadFile(id),
+        formData
+      );
+    },
+  },
 };
 
 

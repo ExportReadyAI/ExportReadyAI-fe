@@ -503,4 +503,47 @@ export interface CreateBuyerProfileRequest {
 
 export interface UpdateBuyerProfileRequest extends Partial<CreateBuyerProfileRequest> {}
 
+// Educational Materials Types (Module 7)
+export interface EducationalArticle {
+  id: number;
+  module: number;
+  title: string;
+  content: string; // Markdown supported
+  video_url?: string | null;
+  file_url?: string | null;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EducationalModule {
+  id: number;
+  title: string;
+  description?: string;
+  order_index: number;
+  article_count?: number;
+  articles?: EducationalArticle[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateEducationalModuleRequest {
+  title: string;
+  description?: string;
+  order_index?: number;
+}
+
+export interface UpdateEducationalModuleRequest extends Partial<CreateEducationalModuleRequest> {}
+
+export interface CreateEducationalArticleRequest {
+  module_id: number;
+  title: string;
+  content: string;
+  video_url?: string | null;
+  file_url?: string | null;
+  order_index?: number;
+}
+
+export interface UpdateEducationalArticleRequest extends Partial<Omit<CreateEducationalArticleRequest, 'module_id'>> {}
+
 

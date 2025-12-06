@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/lib/stores/auth.store"
-import { businessProfileService } from "@/lib/api/services"
+import { businessProfileService, educationalService } from "@/lib/api/services"
 import { Sidebar } from "@/components/layout/Sidebar"
+import { EducationalModulesAccordion } from "@/components/educational/EducationalModulesAccordion"
+import type { EducationalModule } from "@/lib/api/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { 
@@ -75,6 +77,8 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummaryUMKM | DashboardSummaryAdmin | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [modules, setModules] = useState<EducationalModule[]>([])
+  const [loadingModules, setLoadingModules] = useState(true)
 
   useEffect(() => {
     // Check both Zustand state and localStorage for token
@@ -88,6 +92,7 @@ export default function DashboardPage() {
 
     console.log("Fetching dashboard summary with token:", token.substring(0, 20) + "...") // Debug
     fetchDashboardSummary()
+    fetchEducationalModules()
   }, [isAuthenticated, router])
 
   const fetchDashboardSummary = async () => {
@@ -104,6 +109,31 @@ export default function DashboardPage() {
       setError(err.response?.data?.message || "Terjadi kesalahan")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchEducationalModules = async () => {
+    try {
+      setLoadingModules(true)
+      const response = await educationalService.modules.list({ limit: 3 })
+      
+      // Handle different response formats
+      let modulesData: EducationalModule[] = []
+      if (Array.isArray(response)) {
+        modulesData = response
+      } else if ((response as any).success && (response as any).data) {
+        modulesData = (response as any).data
+      } else if ((response as any).results) {
+        modulesData = (response as any).results
+      }
+      
+      // Sort by order_index
+      modulesData.sort((a, b) => a.order_index - b.order_index)
+      setModules(modulesData)
+    } catch (err: any) {
+      console.error("Error fetching educational modules:", err)
+    } finally {
+      setLoadingModules(false)
     }
   }
 
@@ -319,6 +349,40 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
+
+          {/* Educational Materials Section */}
+          {modules.length > 0 && (
+            <div className="mt-8 bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_6px_0_0_#bae6fd]">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#0369a1] shadow-[0_4px_0_0_#065985]">
+                    <FileText className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-extrabold text-[#0C4A6E]">
+                      Materi Edukasi 📚
+                    </h2>
+                    <p className="text-sm text-[#7DD3FC]">
+                      Pelajari panduan ekspor dan tips bisnis
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {loadingModules ? (
+                <div className="text-center py-8">
+                  <div className="inline-block h-8 w-8 border-4 border-[#0284C7] border-t-transparent rounded-full animate-spin" />
+                  <p className="mt-2 text-sm text-[#7DD3FC]">Memuat materi...</p>
+                </div>
+              ) : (
+                <EducationalModulesAccordion
+                  modules={modules}
+                  maxModules={3}
+                  showViewAll={true}
+                />
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>

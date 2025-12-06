@@ -31,6 +31,12 @@ apiClient.interceptors.request.use(
       console.warn("API Request without token:", config.url) // Debug log
     }
     
+    // If data is FormData, let axios set Content-Type automatically with boundary
+    // Don't override Content-Type for FormData uploads
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     return config;
   },
   (error: AxiosError) => {
