@@ -21,6 +21,8 @@ interface AuthActions {
   setAccessToken: (token: string) => void;
   isAdmin: () => boolean;
   isUMKM: () => boolean;
+  isBuyer: () => boolean;
+  isForwarder: () => boolean;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -76,6 +78,16 @@ export const useAuthStore = create<AuthStore>()(
         isUMKM: () => {
           const state = get();
           return state.user?.role === 'UMKM';
+        },
+        
+        isBuyer: () => {
+          const state = get();
+          return state.user?.role === 'Buyer';
+        },
+        
+        isForwarder: () => {
+          const state = get();
+          return state.user?.role === 'Forwarder';
         },
       }),
       {

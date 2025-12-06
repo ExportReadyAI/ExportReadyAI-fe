@@ -1,0 +1,1309 @@
+{
+  "info": {
+    "_postman_id": "exportready-modul-6-market-connect",
+    "name": "ExportReady.AI - Modul 6: Market Connect & Trust Logistics",
+    "description": "# ExportReady.AI - Modul 6: AI Market Connect & Trust Logistics\n\n## PBI Coverage:\n\n### Modul 6A: Buyer Demand Board (Smart RFQ)\n- **PBI-BE-M6-01**: User Role Enum Update (Buyer, Forwarder)\n- **PBI-BE-M6-02**: Database: BuyerRequest Table\n- **PBI-BE-M6-03**: POST /buyer-requests - Create buyer request\n- **PBI-BE-M6-04**: GET /buyer-requests - List buyer requests (role-based)\n- **PBI-BE-M6-05**: GET /buyer-requests/:id - Get buyer request detail\n- **PBI-BE-M6-06**: PUT /buyer-requests/:id - Update buyer request\n- **PBI-BE-M6-07**: PATCH /buyer-requests/:id/status - Update status\n- **PBI-BE-M6-08**: DELETE /buyer-requests/:id - Delete buyer request\n- **PBI-BE-M6-09**: AI Smart Matching - Category & HS Code\n- **PBI-BE-M6-10**: AI Smart Matching - Spec Requirements\n- **PBI-BE-M6-11**: AI Smart Matching - Capability Filter\n- **PBI-BE-M6-12**: Calculate Final Match Score\n- **PBI-BE-M6-13**: GET /buyer-requests/:id/matched-umkm - Get matched UMKM\n\n### Modul 6B: Forwarder Directory & Reputation System\n- **PBI-BE-M6-14**: Database: ForwarderProfile Table\n- **PBI-BE-M6-15**: Database: ForwarderReview Table\n- **PBI-BE-M6-16**: POST /forwarders/profile - Create forwarder profile\n- **PBI-BE-M6-17**: GET /forwarders - List forwarders with filters\n- **PBI-BE-M6-18**: GET /forwarders/:id - Get forwarder detail\n- **PBI-BE-M6-19**: PUT /forwarders/profile/:id - Update forwarder profile\n- **PBI-BE-M6-20**: POST /forwarders/:id/reviews - Create review\n- **PBI-BE-M6-21**: PUT /forwarders/:id/reviews/:review_id - Update review\n- **PBI-BE-M6-22**: DELETE /forwarders/:id/reviews/:review_id - Delete review\n- **PBI-BE-M6-23**: Calculate Forwarder Average Rating\n- **PBI-BE-M6-24**: Forwarder Recommendation Engine\n- **PBI-BE-M6-25**: GET /forwarders/recommendations - Get recommendations\n- **PBI-BE-M6-26**: GET /forwarders/:id/statistics - Get statistics\n\n## How to Use:\n1. Run Setup section first (Register Buyer, Forwarder, UMKM users)\n2. Create Business Profile for UMKM (required for matching)\n3. Create Products for UMKM (required for matching)\n4. Test Buyer Requests flow\n5. Test Forwarder flow\n\n## AI Smart Matching:\n- Uses Kolosal AI for spec requirements extraction\n- Multi-factor scoring: Category/HS (40%), Spec (30%), Capability (30%)\n- Threshold: Score >= 70",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "buyer_access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "forwarder_access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "umkm_access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "buyer_user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "forwarder_user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "umkm_user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "buyer_request_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "forwarder_profile_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "forwarder_review_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "business_profile_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Setup - Auth & Prerequisites",
+      "description": "Setup authentication for Buyer, Forwarder, and UMKM users. Run these in order.",
+      "item": [
+        {
+          "name": "0.1 Register Buyer User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('buyer_user_id', jsonData.data.user.id);",
+                  "    pm.test('✅ Buyer user registered successfully', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.user.role).to.eql('Buyer');",
+                  "    });",
+                  "} else if (pm.response.code === 409) {",
+                  "    pm.test('⚠️ Buyer user already exists - proceed to login', function () {",
+                  "        pm.expect(pm.response.code).to.eql(409);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"buyer.test@exportready.ai\",\n  \"password\": \"TestPassword123!\",\n  \"full_name\": \"Buyer Test User\",\n  \"role\": \"Buyer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register", ""]
+            },
+            "description": "**PBI-BE-M6-01**: Register new Buyer user\n\nNote: Role must be set to 'Buyer' in registration (or default to UMKM)"
+          }
+        },
+        {
+          "name": "0.2 Login Buyer User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('buyer_access_token', jsonData.data.tokens.access);",
+                  "    pm.collectionVariables.set('buyer_user_id', jsonData.data.user.id);",
+                  "    ",
+                  "    pm.test('✅ Buyer login successful - token saved', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.tokens.access).to.not.be.empty;",
+                  "        pm.expect(jsonData.data.user.role).to.eql('Buyer');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"buyer.test@exportready.ai\",\n  \"password\": \"TestPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login", ""]
+            },
+            "description": "**PBI-BE-M1-02**: Login Buyer user and get JWT token"
+          }
+        },
+        {
+          "name": "0.3 Register Forwarder User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('forwarder_user_id', jsonData.data.user.id);",
+                  "    pm.test('✅ Forwarder user registered successfully', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.user.role).to.eql('Forwarder');",
+                  "    });",
+                  "} else if (pm.response.code === 409) {",
+                  "    pm.test('⚠️ Forwarder user already exists - proceed to login', function () {",
+                  "        pm.expect(pm.response.code).to.eql(409);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"forwarder.test@exportready.ai\",\n  \"password\": \"TestPassword123!\",\n  \"full_name\": \"Forwarder Test User\",\n  \"role\": \"Forwarder\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register", ""]
+            },
+            "description": "**PBI-BE-M6-01**: Register new Forwarder user"
+          }
+        },
+        {
+          "name": "0.4 Login Forwarder User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('forwarder_access_token', jsonData.data.tokens.access);",
+                  "    pm.collectionVariables.set('forwarder_user_id', jsonData.data.user.id);",
+                  "    ",
+                  "    pm.test('✅ Forwarder login successful - token saved', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.user.role).to.eql('Forwarder');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"forwarder.test@exportready.ai\",\n  \"password\": \"TestPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login", ""]
+            },
+            "description": "**PBI-BE-M1-02**: Login Forwarder user and get JWT token"
+          }
+        },
+        {
+          "name": "0.5 Register UMKM User (for matching)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('umkm_user_id', jsonData.data.user.id);",
+                  "    pm.test('✅ UMKM user registered successfully', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "    });",
+                  "} else if (pm.response.code === 409) {",
+                  "    pm.test('⚠️ UMKM user already exists - proceed to login', function () {",
+                  "        pm.expect(pm.response.code).to.eql(409);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"umkm.m6.test@exportready.ai\",\n  \"password\": \"TestPassword123!\",\n  \"full_name\": \"UMKM M6 Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register", ""]
+            },
+            "description": "Register UMKM user for testing buyer request matching"
+          }
+        },
+        {
+          "name": "0.6 Login UMKM User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('umkm_access_token', jsonData.data.tokens.access);",
+                  "    pm.collectionVariables.set('umkm_user_id', jsonData.data.user.id);",
+                  "    ",
+                  "    pm.test('✅ UMKM login successful', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"umkm.m6.test@exportready.ai\",\n  \"password\": \"TestPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login", ""]
+            },
+            "description": "Login UMKM user"
+          }
+        },
+        {
+          "name": "0.7 Create Business Profile (UMKM)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('business_profile_id', jsonData.data.id);",
+                  "    ",
+                  "    pm.test('✅ Business profile created', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{umkm_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"PT Eksport Maju M6\",\n  \"address\": \"Jl. Raya Industri No. 123, Bekasi\",\n  \"production_capacity_per_month\": 10000,\n  \"year_established\": 2018,\n  \"certifications\": [\"Halal\", \"ISO\", \"HACCP\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/business-profile/",
+              "host": ["{{base_url}}"],
+              "path": ["business-profile", ""]
+            },
+            "description": "Create business profile for UMKM (required for matching)"
+          }
+        },
+        {
+          "name": "0.8 Create Product (UMKM)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('product_id', jsonData.data.id);",
+                  "    ",
+                  "    pm.test('✅ Product created', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{umkm_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_local\": \"Keripik Singkong Premium\",\n  \"category_id\": 1,\n  \"description_local\": \"Keripik singkong renyah dengan bumbu pedas manis khas Indonesia. Dibuat dari singkong pilihan berkualitas tinggi.\",\n  \"material_composition\": \"Singkong (85%), Minyak Kelapa Sawit (10%), Gula Merah (2%), Cabai Bubuk (2%), Garam (1%)\",\n  \"production_technique\": \"Machine\",\n  \"finishing_type\": \"Vacuum Sealed\",\n  \"quality_specs\": {\n    \"moisture_content\": \"3%\",\n    \"crispiness\": \"High\",\n    \"shelf_life\": \"6 months\",\n    \"halal_certified\": true\n  },\n  \"durability_claim\": \"6 Bulan dalam kemasan tertutup\",\n  \"packaging_type\": \"Aluminium Foil Pouch\",\n  \"dimensions_l_w_h\": {\n    \"l\": 25,\n    \"w\": 18,\n    \"h\": 8\n  },\n  \"weight_net\": \"0.250\",\n  \"weight_gross\": \"0.280\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/",
+              "host": ["{{base_url}}"],
+              "path": ["products", ""]
+            },
+            "description": "Create product for UMKM (required for buyer request matching)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Buyer Requests - CRUD (PBI-BE-M6-03 to M6-08)",
+      "description": "Buyer Request management endpoints",
+      "item": [
+        {
+          "name": "1.1 POST /buyer-requests - Create Request (PBI-BE-M6-03)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('buyer_request_id', jsonData.data.id);",
+                  "    ",
+                  "    pm.test('✅ PBI-M6-03: Buyer request created successfully', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.id).to.be.a('number');",
+                  "        pm.expect(jsonData.data.status).to.eql('Open');",
+                  "    });",
+                  "    ",
+                  "    pm.test('Auto-assigned buyer_user_id', function () {",
+                  "        pm.expect(jsonData.data.buyer_user).to.not.be.empty;",
+                  "    });",
+                  "    ",
+                  "    console.log('Buyer Request ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyer_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_category\": \"Makanan Olahan\",\n  \"hs_code_target\": \"20081900\",\n  \"spec_requirements\": \"Keripik singkong dengan bumbu pedas manis, kemasan vacuum sealed, halal certified, shelf life minimal 6 bulan, moisture content maksimal 3%\",\n  \"target_volume\": 5000,\n  \"destination_country\": \"JP\",\n  \"keyword_tags\": [\"keripik\", \"singkong\", \"halal\", \"snack\"],\n  \"min_rank_required\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/buyer-requests/",
+              "host": ["{{base_url}}"],
+              "path": ["buyer-requests", ""]
+            },
+            "description": "**PBI-BE-M6-03**: Create new buyer request\n\n**Required fields:**\n- product_category\n- spec_requirements\n- target_volume\n- destination_country\n\n**Optional fields:**\n- hs_code_target\n- keyword_tags (array)\n- min_rank_required (default: 0)\n\n**Auto-triggers:**\n- AI Smart Matching (M6-09, M6-10, M6-11, M6-12)"
+          }
+        },
+        {
+          "name": "1.2 GET /buyer-requests - List (Buyer View) (PBI-BE-M6-04)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-04: Buyer requests listed', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Buyer sees only own requests', function () {",
+                  "    jsonData.data.forEach(req => {",
+                  "        pm.expect(req.buyer_user).to.eql(parseInt(pm.collectionVariables.get('buyer_user_id')));",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyer_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buyer-requests/?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["buyer-requests", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "**PBI-BE-M6-04**: List buyer requests\n\n**Buyer role:** Returns only own requests\n**UMKM role:** Returns 'Open' requests matching capabilities\n**Admin role:** Returns all requests\n\n**Query params:**\n- page, limit (pagination)\n- status (filter by status)\n- category (filter by category)\n- destination_country (filter by country)"
+          }
+        },
+        {
+          "name": "1.3 GET /buyer-requests - List (UMKM View) (PBI-BE-M6-04)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-04: UMKM sees matching requests', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Only Open requests shown', function () {",
+                  "    jsonData.data.forEach(req => {",
+                  "        pm.expect(req.status).to.eql('Open');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{umkm_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buyer-requests/",
+              "host": ["{{base_url}}"],
+              "path": ["buyer-requests", ""]
+            },
+            "description": "**PBI-BE-M6-04**: List buyer requests (UMKM view)\n\nUMKM sees only 'Open' requests where they meet min_rank_required"
+          }
+        },
+        {
+          "name": "1.4 GET /buyer-requests/:id - Detail (PBI-BE-M6-05)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-05: Buyer request detail retrieved', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.id).to.be.a('number');",
+                  "    pm.expect(jsonData.data.product_category).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test('Includes buyer info', function () {",
+                  "    pm.expect(jsonData.data).to.have.property('buyer_email');",
+                  "    pm.expect(jsonData.data).to.have.property('buyer_full_name');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyer_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buyer-requests/{{buyer_request_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["buyer-requests", "{{buyer_request_id}}", ""]
+            },
+            "description": "**PBI-BE-M6-05**: Get buyer request detail\n\n**Access control:**\n- Buyer: Unlimited access to own requests\n- UMKM: Access only if meets min_rank_required\n- Admin: Full access"
+          }
+        },
+        {
+          "name": "1.5 PUT /buyer-requests/:id - Update (PBI-BE-M6-06)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-06: Buyer request updated', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.target_volume).to.eql(10000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyer_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_volume\": 10000,\n  \"keyword_tags\": [\"keripik\", \"singkong\", \"halal\", \"snack\", \"premium\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/buyer-requests/{{buyer_request_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["buyer-requests", "{{buyer_request_id}}", ""]
+            },
+            "description": "**PBI-BE-M6-06**: Update buyer request\n\n**Re-triggers:** AI Smart Matching if criteria changed"
+          }
+        },
+        {
+          "name": "1.6 PATCH /buyer-requests/:id/status - Update Status (PBI-BE-M6-07)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-07: Status updated', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.data.status).to.eql('Matched');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyer_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Matched\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/buyer-requests/{{buyer_request_id}}/status/",
+              "host": ["{{base_url}}"],
+              "path": ["buyer-requests", "{{buyer_request_id}}", "status", ""]
+            },
+            "description": "**PBI-BE-M6-07**: Update buyer request status\n\n**Valid statuses:** Open, Matched, Closed"
+          }
+        },
+        {
+          "name": "1.7 DELETE /buyer-requests/:id (PBI-BE-M6-08)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('✅ PBI-M6-08: Buyer request deleted', function () {",
+                  "    pm.expect(pm.response.code).to.eql(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyer_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buyer-requests/{{buyer_request_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["buyer-requests", "{{buyer_request_id}}", ""]
+            },
+            "description": "**PBI-BE-M6-08**: Delete buyer request\n\n**Note:** Only owner can delete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. AI Smart Matching (PBI-BE-M6-09 to M6-13)",
+      "description": "AI Smart Matching services and matched UMKM endpoint",
+      "item": [
+        {
+          "name": "2.1 GET /buyer-requests/:id/matched-umkm (PBI-BE-M6-13)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-13: Matched UMKM retrieved', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Matches have match_score >= 70', function () {",
+                  "    jsonData.data.forEach(match => {",
+                  "        pm.expect(match.match_score).to.be.at.least(70);",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('Sorted by match_score DESC', function () {",
+                  "    if (jsonData.data.length > 1) {",
+                  "        for (let i = 0; i < jsonData.data.length - 1; i++) {",
+                  "            pm.expect(jsonData.data[i].match_score).to.be.at.least(jsonData.data[i+1].match_score);",
+                  "        }",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Includes UMKM contact info', function () {",
+                  "    if (jsonData.data.length > 0) {",
+                  "        pm.expect(jsonData.data[0]).to.have.property('company_name');",
+                  "        pm.expect(jsonData.data[0]).to.have.property('email');",
+                  "        pm.expect(jsonData.data[0]).to.have.property('contact_info');",
+                  "    }",
+                  "});",
+                  "",
+                  "console.log('Matched UMKM count:', jsonData.data.length);",
+                  "jsonData.data.forEach((match, idx) => {",
+                  "    console.log(`Match ${idx + 1}: ${match.company_name} - Score: ${match.match_score}`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyer_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/buyer-requests/{{buyer_request_id}}/matched-umkm/",
+              "host": ["{{base_url}}"],
+              "path": ["buyer-requests", "{{buyer_request_id}}", "matched-umkm", ""]
+            },
+            "description": "**PBI-BE-M6-13**: Get matched UMKM for buyer request\n\n**AI Smart Matching Services (M6-09 to M6-12):**\n- M6-09: Category & HS Code matching (40% weight)\n- M6-10: Spec Requirements matching using LLM (30% weight)\n- M6-11: Capability filtering - rank, certifications, export experience (30% weight)\n- M6-12: Final match score calculation\n\n**Threshold:** Only returns UMKM with score >= 70\n**Sorting:** By match_score DESC"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Forwarder Profile - CRUD (PBI-BE-M6-14, M6-16, M6-19)",
+      "description": "Forwarder profile management",
+      "item": [
+        {
+          "name": "3.1 POST /forwarders/profile - Create Profile (PBI-BE-M6-16)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('forwarder_profile_id', jsonData.data.id);",
+                  "    ",
+                  "    pm.test('✅ PBI-M6-16: Forwarder profile created', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.id).to.be.a('number');",
+                  "        pm.expect(jsonData.data.average_rating).to.eql(0);",
+                  "        pm.expect(jsonData.data.total_reviews).to.eql(0);",
+                  "    });",
+                  "    ",
+                  "    console.log('Forwarder Profile ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{forwarder_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"PT Logistik Global Eksport\",\n  \"contact_info\": {\n    \"phone\": \"+62-21-12345678\",\n    \"email\": \"info@logistikglobal.com\",\n    \"address\": \"Jl. Raya Cikarang No. 456, Bekasi\",\n    \"website\": \"https://logistikglobal.com\"\n  },\n  \"specialization_routes\": [\"ID-JP\", \"ID-US\", \"ID-SG\", \"ID-AU\"],\n  \"service_types\": [\"Sea Freight\", \"Air Freight\", \"Cold Chain\", \"Express Delivery\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/forwarders/profile/",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", "profile", ""]
+            },
+            "description": "**PBI-BE-M6-16**: Create forwarder profile\n\n**Required fields:**\n- company_name\n- contact_info (JSON object)\n- specialization_routes (array, format: \"ORIGIN-DEST\")\n- service_types (array)\n\n**Auto-set:**\n- average_rating = 0\n- total_reviews = 0"
+          }
+        },
+        {
+          "name": "3.2 GET /forwarders - List (PBI-BE-M6-17)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-17: Forwarders listed', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Includes rating and review count', function () {",
+                  "    if (jsonData.data.length > 0) {",
+                  "        pm.expect(jsonData.data[0]).to.have.property('average_rating');",
+                  "        pm.expect(jsonData.data[0]).to.have.property('total_reviews');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{umkm_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/forwarders/?page=1&limit=10&sort=rating",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "rating",
+                  "description": "Options: rating, reviews, name"
+                },
+                {
+                  "key": "destination_country",
+                  "value": "JP",
+                  "description": "Filter by destination country"
+                },
+                {
+                  "key": "service_type",
+                  "value": "Sea Freight",
+                  "description": "Filter by service type"
+                },
+                {
+                  "key": "min_rating",
+                  "value": "4.0",
+                  "description": "Filter by minimum rating"
+                }
+              ]
+            },
+            "description": "**PBI-BE-M6-17**: List forwarders with filters and sorting\n\n**Available to:** Admin, UMKM\n\n**Query params:**\n- page, limit (pagination)\n- destination_country (filter by route)\n- service_type (filter by service)\n- min_rating (filter by rating)\n- sort (rating, reviews, name)"
+          }
+        },
+        {
+          "name": "3.3 GET /forwarders/:id - Detail (PBI-BE-M6-18)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-18: Forwarder detail retrieved', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.id).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Includes recent reviews (latest 5)', function () {",
+                  "    pm.expect(jsonData.data).to.have.property('recent_reviews');",
+                  "    pm.expect(jsonData.data.recent_reviews).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Includes rating distribution', function () {",
+                  "    pm.expect(jsonData.data).to.have.property('rating_distribution');",
+                  "    pm.expect(jsonData.data.rating_distribution).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{umkm_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/forwarders/{{forwarder_profile_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", "{{forwarder_profile_id}}", ""]
+            },
+            "description": "**PBI-BE-M6-18**: Get forwarder detail\n\n**Includes:**\n- Company info, routes, services\n- Average rating, total reviews\n- Recent reviews (latest 5)\n- Rating distribution (5 stars: x%, 4 stars: y%, etc)"
+          }
+        },
+        {
+          "name": "3.4 PUT /forwarders/profile/:id - Update (PBI-BE-M6-19)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-19: Forwarder profile updated', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Rating fields cannot be manually changed', function () {",
+                  "    // Rating should remain unchanged",
+                  "    pm.expect(jsonData.data.average_rating).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{forwarder_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"PT Logistik Global Eksport - Updated\",\n  \"service_types\": [\"Sea Freight\", \"Air Freight\", \"Cold Chain\", \"Express Delivery\", \"Door-to-Door\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/forwarders/profile/{{forwarder_profile_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", "profile", "{{forwarder_profile_id}}", ""]
+            },
+            "description": "**PBI-BE-M6-19**: Update forwarder profile\n\n**Note:** average_rating and total_reviews cannot be manually changed (auto-calculated)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Forwarder Reviews (PBI-BE-M6-20 to M6-23)",
+      "description": "Forwarder review management and rating calculation",
+      "item": [
+        {
+          "name": "4.1 POST /forwarders/:id/reviews - Create Review (PBI-BE-M6-20)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('forwarder_review_id', jsonData.data.id);",
+                  "    ",
+                  "    pm.test('✅ PBI-M6-20: Review created successfully', function () {",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.data.rating).to.be.within(1, 5);",
+                  "    });",
+                  "    ",
+                  "    console.log('Review ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{umkm_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"review_text\": \"Pelayanan sangat baik, pengiriman tepat waktu, komunikasi responsif. Highly recommended!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/forwarders/{{forwarder_profile_id}}/reviews/",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", "{{forwarder_profile_id}}", "reviews", ""]
+            },
+            "description": "**PBI-BE-M6-20**: Create forwarder review\n\n**Required:**\n- rating (1-5)\n- review_text (optional)\n\n**Auto-triggers:**\n- Rating recalculation (M6-23)\n\n**Validation:**\n- Only UMKM can create reviews\n- One review per UMKM per forwarder (unique constraint)"
+          }
+        },
+        {
+          "name": "4.2 PUT /forwarders/:id/reviews/:review_id - Update Review (PBI-BE-M6-21)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-21: Review updated', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.rating).to.eql(4);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{umkm_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"review_text\": \"Updated review: Pelayanan baik dengan sedikit ruang untuk perbaikan.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/forwarders/{{forwarder_profile_id}}/reviews/{{forwarder_review_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", "{{forwarder_profile_id}}", "reviews", "{{forwarder_review_id}}", ""]
+            },
+            "description": "**PBI-BE-M6-21**: Update forwarder review\n\n**Auto-triggers:**\n- Rating recalculation (M6-23)"
+          }
+        },
+        {
+          "name": "4.3 DELETE /forwarders/:id/reviews/:review_id (PBI-BE-M6-22)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('✅ PBI-M6-22: Review deleted', function () {",
+                  "    pm.expect(pm.response.code).to.eql(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{umkm_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/forwarders/{{forwarder_profile_id}}/reviews/{{forwarder_review_id}}/delete/",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", "{{forwarder_profile_id}}", "reviews", "{{forwarder_review_id}}", "delete", ""]
+            },
+            "description": "**PBI-BE-M6-22**: Delete forwarder review\n\n**Auto-triggers:**\n- Rating recalculation (M6-23)"
+          }
+        },
+        {
+          "name": "4.4 Verify Rating Recalculation (PBI-BE-M6-23)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-23: Rating recalculated after review operations', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.data).to.have.property('average_rating');",
+                  "    pm.expect(jsonData.data).to.have.property('total_reviews');",
+                  "    pm.expect(jsonData.data.average_rating).to.be.within(0, 5);",
+                  "});",
+                  "",
+                  "console.log('Average Rating:', jsonData.data.average_rating);",
+                  "console.log('Total Reviews:', jsonData.data.total_reviews);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{forwarder_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/forwarders/{{forwarder_profile_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", "{{forwarder_profile_id}}", ""]
+            },
+            "description": "**PBI-BE-M6-23**: Verify rating recalculation\n\nRating is automatically recalculated after:\n- Create review\n- Update review\n- Delete review\n\nFormula: AVG(rating) rounded to 1 decimal place"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Forwarder Recommendations & Statistics (PBI-BE-M6-24 to M6-26)",
+      "description": "Forwarder recommendation engine and statistics",
+      "item": [
+        {
+          "name": "5.1 GET /forwarders/recommendations (PBI-BE-M6-25)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-25: Recommendations retrieved', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Returns top 5 forwarders', function () {",
+                  "    pm.expect(jsonData.data.length).to.be.at.most(5);",
+                  "});",
+                  "",
+                  "pm.test('Sorted by rating DESC', function () {",
+                  "    if (jsonData.data.length > 1) {",
+                  "        for (let i = 0; i < jsonData.data.length - 1; i++) {",
+                  "            pm.expect(jsonData.data[i].average_rating).to.be.at.least(jsonData.data[i+1].average_rating);",
+                  "        }",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Forwarders have matching route', function () {",
+                  "    jsonData.data.forEach(f => {",
+                  "        const hasRoute = f.specialization_routes.some(r => r.includes('JP'));",
+                  "        pm.expect(hasRoute).to.be.true;",
+                  "    });",
+                  "});",
+                  "",
+                  "console.log('Recommended Forwarders:', jsonData.data.length);",
+                  "jsonData.data.forEach((f, idx) => {",
+                  "    console.log(`${idx + 1}. ${f.company_name} - Rating: ${f.average_rating} (${f.total_reviews} reviews)`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{umkm_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/forwarders/recommendations/?destination_country=JP",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", "recommendations", ""],
+              "query": [
+                {
+                  "key": "destination_country",
+                  "value": "JP",
+                  "description": "Required: ISO 3166-1 alpha-2 country code"
+                }
+              ]
+            },
+            "description": "**PBI-BE-M6-25**: Get forwarder recommendations\n\n**PBI-BE-M6-24**: Forwarder Recommendation Engine\n\n**Input:** destination_country (from ExportAnalysis or Costing)\n**Query:** ForwarderProfile WHERE destination IN specialization_routes\n**Sort:** average_rating DESC, total_reviews DESC\n**Output:** Top 5 forwarders\n\n**Available to:** UMKM"
+          }
+        },
+        {
+          "name": "5.2 GET /forwarders/:id/statistics (PBI-BE-M6-26)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('✅ PBI-M6-26: Statistics retrieved', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('total_reviews');",
+                  "    pm.expect(jsonData.data).to.have.property('average_rating');",
+                  "});",
+                  "",
+                  "pm.test('Has rating distribution', function () {",
+                  "    pm.expect(jsonData.data).to.have.property('rating_distribution');",
+                  "    pm.expect(jsonData.data.rating_distribution).to.be.an('object');",
+                  "});",
+                  "",
+                  "pm.test('Has total UMKM partnerships', function () {",
+                  "    pm.expect(jsonData.data).to.have.property('total_umkm_partnerships');",
+                  "    pm.expect(jsonData.data.total_umkm_partnerships).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Has recent review trend', function () {",
+                  "    pm.expect(jsonData.data).to.have.property('recent_review_trend');",
+                  "    pm.expect(jsonData.data.recent_review_trend).to.be.an('array');",
+                  "});",
+                  "",
+                  "console.log('Statistics:', JSON.stringify(jsonData.data, null, 2));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{forwarder_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/forwarders/{{forwarder_profile_id}}/statistics/",
+              "host": ["{{base_url}}"],
+              "path": ["forwarders", "{{forwarder_profile_id}}", "statistics", ""]
+            },
+            "description": "**PBI-BE-M6-26**: Get forwarder statistics\n\n**Includes:**\n- total_reviews\n- average_rating\n- rating_distribution (5 stars: x%, 4 stars: y%, etc)\n- total_umkm_partnerships (unique UMKM who reviewed)\n- recent_review_trend (last 30 days)\n\n**Available to:**\n- Forwarder (own statistics)\n- Admin (all statistics)"
+          }
+        }
+      ]
+    }
+  ]
+}
+

@@ -34,6 +34,21 @@ import type {
   CreateCostingRequest,
   UpdateCostingRequest,
   CurrencySettings,
+  BuyerRequest,
+  CreateBuyerRequestRequest,
+  UpdateBuyerRequestRequest,
+  UpdateBuyerRequestStatusRequest,
+  MatchedUMKM,
+  ForwarderProfile,
+  CreateForwarderProfileRequest,
+  UpdateForwarderProfileRequest,
+  ForwarderReview,
+  CreateForwarderReviewRequest,
+  UpdateForwarderReviewRequest,
+  ForwarderStatistics,
+  BuyerProfile,
+  CreateBuyerProfileRequest,
+  UpdateBuyerProfileRequest,
 } from './types';
 
 /**
@@ -249,6 +264,114 @@ export const costingService = {
   
   getCurrencySettings: () =>
     get<CurrencySettings>(API_ENDPOINTS.costing.currencySettings),
+};
+
+// ==================== Buyer Request Services (Module 6A) ====================
+
+export const buyerRequestService = {
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    category?: string;
+    destination_country?: string;
+  }) =>
+    get<BuyerRequest[] | { results: BuyerRequest[]; count: number; next?: string; previous?: string }>(
+      API_ENDPOINTS.buyerRequests.list,
+      { params }
+    ),
+  
+  get: (id: string | number) =>
+    get<BuyerRequest>(API_ENDPOINTS.buyerRequests.detail(id)),
+  
+  create: (data: CreateBuyerRequestRequest) =>
+    post<BuyerRequest>(API_ENDPOINTS.buyerRequests.create, data),
+  
+  update: (id: string | number, data: UpdateBuyerRequestRequest) =>
+    put<BuyerRequest>(API_ENDPOINTS.buyerRequests.update(id), data),
+  
+  updateStatus: (id: string | number, data: UpdateBuyerRequestStatusRequest) =>
+    patch<BuyerRequest>(API_ENDPOINTS.buyerRequests.updateStatus(id), data),
+  
+  delete: (id: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.buyerRequests.delete(id)),
+  
+  getMatchedUMKM: (id: string | number) =>
+    get<MatchedUMKM[]>(API_ENDPOINTS.buyerRequests.matchedUMKM(id)),
+};
+
+// ==================== Forwarder Services (Module 6B) ====================
+
+export const forwarderService = {
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    destination_country?: string;
+    service_type?: string;
+    min_rating?: number;
+    sort?: 'rating' | 'reviews' | 'name';
+  }) =>
+    get<ForwarderProfile[] | { results: ForwarderProfile[]; count: number; next?: string; previous?: string }>(
+      API_ENDPOINTS.forwarders.list,
+      { params }
+    ),
+  
+  get: (id: string | number) =>
+    get<ForwarderProfile>(API_ENDPOINTS.forwarders.detail(id)),
+  
+  getMyProfile: () =>
+    get<ForwarderProfile>(API_ENDPOINTS.forwarders.profileMe),
+  
+  createProfile: (data: CreateForwarderProfileRequest) =>
+    post<ForwarderProfile>(API_ENDPOINTS.forwarders.profile, data),
+  
+  updateProfile: (id: string | number, data: UpdateForwarderProfileRequest) =>
+    put<ForwarderProfile>(API_ENDPOINTS.forwarders.profileUpdate(id), data),
+  
+  createReview: (forwarderId: string | number, data: CreateForwarderReviewRequest) =>
+    post<ForwarderReview>(API_ENDPOINTS.forwarders.createReview(forwarderId), data),
+  
+  updateReview: (forwarderId: string | number, reviewId: string | number, data: UpdateForwarderReviewRequest) =>
+    put<ForwarderReview>(API_ENDPOINTS.forwarders.updateReview(forwarderId, reviewId), data),
+  
+  deleteReview: (forwarderId: string | number, reviewId: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.forwarders.deleteReview(forwarderId, reviewId)),
+  
+  getRecommendations: (params: { destination_country: string }) =>
+    get<ForwarderProfile[]>(API_ENDPOINTS.forwarders.recommendations, { params }),
+  
+  getStatistics: (id: string | number) =>
+    get<ForwarderStatistics>(API_ENDPOINTS.forwarders.statistics(id)),
+};
+
+// ==================== Buyer Profile Services (Module 6C) ====================
+
+export const buyerProfileService = {
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    product_category?: string;
+    source_country?: string;
+    business_type?: string;
+    search?: string;
+    sort?: 'company_name' | 'created_at';
+  }) =>
+    get<BuyerProfile[] | { results: BuyerProfile[]; count: number; next?: string; previous?: string } | ApiResponse<BuyerProfile[]>>(
+      API_ENDPOINTS.buyers.list,
+      { params }
+    ),
+  
+  get: (id: string | number) =>
+    get<BuyerProfile>(API_ENDPOINTS.buyers.detail(id)),
+  
+  getMyProfile: () =>
+    get<BuyerProfile>(API_ENDPOINTS.buyers.profileMe),
+  
+  createProfile: (data: CreateBuyerProfileRequest) =>
+    post<BuyerProfile>(API_ENDPOINTS.buyers.profile, data),
+  
+  updateProfile: (id: string | number, data: UpdateBuyerProfileRequest) =>
+    put<BuyerProfile>(API_ENDPOINTS.buyers.profileUpdate(id), data),
 };
 
 
