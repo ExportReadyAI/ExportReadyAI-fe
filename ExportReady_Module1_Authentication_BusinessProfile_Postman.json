@@ -1,0 +1,1215 @@
+{
+  "info": {
+    "name": "ExportReady Module 1 - Authentication & Business Profile",
+    "description": "API endpoints for Module 1: Identitas Bisnis (User & BusinessProfile). Includes user registration, login, profile management, and dashboard endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User (Guest)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function() {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data).to.have.property('id');",
+                  "  pm.expect(jsonData.data).to.have.property('email');",
+                  "  pm.expect(jsonData.data).to.have.property('full_name');",
+                  "  pm.expect(jsonData.data).to.have.property('role');",
+                  "  pm.expect(jsonData.data).not.to.have.property('password');",
+                  "  pm.expect(jsonData.data).not.to.have.property('password_hash');",
+                  "});",
+                  "",
+                  "pm.test('Default role is UMKM', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.role).to.equal('UMKM');",
+                  "});",
+                  "",
+                  "// Save user ID for later use",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('user_id', jsonData.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"umkm@example.com\",\n  \"password\": \"SecurePass123\",\n  \"full_name\": \"Budi Santoso\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Register - Email Already Exists (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409 Conflict', function() {",
+                  "  pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test('Error response format', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "  pm.expect(jsonData.message).to.include('already exists');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"umkm@example.com\",\n  \"password\": \"SecurePass123\",\n  \"full_name\": \"Duplicate User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Register - Invalid Email (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message for invalid email', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"SecurePass123\",\n  \"full_name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Register - Password Too Short (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message for short password', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "  pm.expect(jsonData.message).to.include('password');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"short\",\n  \"full_name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has JWT token and user data', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data).to.have.property('access');",
+                  "  pm.expect(jsonData.data).to.have.property('refresh');",
+                  "  pm.expect(jsonData.data).to.have.property('user');",
+                  "  pm.expect(jsonData.data.user).to.have.property('email');",
+                  "  pm.expect(jsonData.data.user).to.have.property('role');",
+                  "});",
+                  "",
+                  "pm.test('Token format is valid', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  var tokenParts = jsonData.data.access.split('.');",
+                  "  pm.expect(tokenParts.length).to.equal(3); // JWT has 3 parts",
+                  "});",
+                  "",
+                  "// Save tokens to environment",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('access_token', jsonData.data.access);",
+                  "pm.environment.set('refresh_token', jsonData.data.refresh);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"umkm@example.com\",\n  \"password\": \"SecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "Login - Invalid Credentials (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function() {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error response format', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"umkm@example.com\",\n  \"password\": \"WrongPassword\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has complete user data', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data).to.have.property('id');",
+                  "  pm.expect(jsonData.data).to.have.property('email');",
+                  "  pm.expect(jsonData.data).to.have.property('full_name');",
+                  "  pm.expect(jsonData.data).to.have.property('role');",
+                  "  pm.expect(jsonData.data).to.have.property('created_at');",
+                  "  pm.expect(jsonData.data).not.to.have.property('password');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Me - No Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function() {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error response for missing token', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me", ""]
+            }
+          }
+        },
+        {
+          "name": "Refresh JWT Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has new access token', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.have.property('access');",
+                  "});",
+                  "",
+                  "// Update access token",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('access_token', jsonData.data.access);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/token/refresh/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "token", "refresh", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business Profile Management",
+      "item": [
+        {
+          "name": "Create Business Profile (UMKM)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function() {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has business profile data', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data).to.have.property('id');",
+                  "  pm.expect(jsonData.data).to.have.property('company_name');",
+                  "  pm.expect(jsonData.data).to.have.property('address');",
+                  "  pm.expect(jsonData.data).to.have.property('production_capacity_per_month');",
+                  "  pm.expect(jsonData.data).to.have.property('year_established');",
+                  "  pm.expect(jsonData.data).to.have.property('certifications');",
+                  "  pm.expect(jsonData.data).to.have.property('user_id');",
+                  "});",
+                  "",
+                  "pm.test('Default certifications is empty array', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.certifications).to.be.an('array');",
+                  "  pm.expect(jsonData.data.certifications).to.have.lengthOf(0);",
+                  "});",
+                  "",
+                  "// Save business profile ID",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('business_profile_id', jsonData.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"CV Kerajinan Nusantara\",\n  \"address\": \"Jl. Merdeka No. 123, Jakarta Selatan\",\n  \"production_capacity_per_month\": \"5000\",\n  \"year_established\": \"2018\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Profile - Already Exists (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409 Conflict', function() {",
+                  "  pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test('Error message for duplicate profile', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "  pm.expect(jsonData.message).to.include('already');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"Another Company\",\n  \"address\": \"Some Address\",\n  \"production_capacity_per_month\": \"1000\",\n  \"year_established\": \"2020\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Profile - Invalid Year (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message for future year', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"Future Company\",\n  \"address\": \"Some Address\",\n  \"production_capacity_per_month\": \"1000\",\n  \"year_established\": \"2050\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Business Profile (UMKM - Own Profile)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('UMKM gets their own profile', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data).to.have.property('company_name');",
+                  "  pm.expect(jsonData.data).to.have.property('user_id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Business Profiles (Admin - All Profiles)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Admin gets all profiles with pagination', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data).to.be.an('array');",
+                  "  pm.expect(jsonData).to.have.property('pagination');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Business Profile - Filter by User (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Filtered by specific user_id', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/?user_id={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", ""],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Business Profile (UMKM)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Profile updated successfully', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data.production_capacity_per_month).to.equal('7500');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"CV Kerajinan Nusantara Jaya\",\n  \"address\": \"Jl. Merdeka No. 123, Jakarta Selatan\",\n  \"production_capacity_per_month\": \"7500\",\n  \"year_established\": \"2018\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/{{business_profile_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", "{{business_profile_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Profile - Not Owner (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function() {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Cannot update other user profile', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{other_access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"Hacked Company\",\n  \"address\": \"Hacker Address\",\n  \"production_capacity_per_month\": \"9999\",\n  \"year_established\": \"2020\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/{{business_profile_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", "{{business_profile_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Certifications (UMKM)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Certifications updated successfully', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data.certifications).to.be.an('array');",
+                  "  pm.expect(jsonData.data.certifications).to.include('Halal');",
+                  "  pm.expect(jsonData.data.certifications).to.include('ISO');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certifications\": [\"Halal\", \"ISO\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/{{business_profile_id}}/certifications/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", "{{business_profile_id}}", "certifications", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Certifications - Invalid Value (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error for invalid certification', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certifications\": [\"InvalidCert\", \"FakeCert\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/{{business_profile_id}}/certifications/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", "{{business_profile_id}}", "certifications", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management (Admin)",
+      "item": [
+        {
+          "name": "List All Users (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains users array with pagination', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data).to.be.an('array');",
+                  "  pm.expect(jsonData).to.have.property('pagination');",
+                  "  pm.expect(jsonData.pagination).to.have.property('count');",
+                  "  pm.expect(jsonData.pagination).to.have.property('total_pages');",
+                  "});",
+                  "",
+                  "pm.test('User data does not include password', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  if (jsonData.data.length > 0) {",
+                  "    pm.expect(jsonData.data[0]).not.to.have.property('password');",
+                  "    pm.expect(jsonData.data[0]).not.to.have.property('password_hash');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Users - Filter by Role (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All users have UMKM role', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  if (jsonData.data.length > 0) {",
+                  "    jsonData.data.forEach(function(user) {",
+                  "      pm.expect(user.role).to.equal('UMKM');",
+                  "    });",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/?role=UMKM",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", ""],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "UMKM"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Users - Search (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Search results returned', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/?search=umkm",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", ""],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "umkm"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Users - UMKM Cannot Access (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function() {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Only admin can list all users', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete User (UMKM - Own Account)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User deleted successfully', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.message).to.include('deleted');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "{{user_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete User - Not Own Account (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function() {",
+                  "  pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Cannot delete other user account', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/999/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "999", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Summary (UMKM)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('UMKM dashboard has required fields', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data).to.have.property('product_count');",
+                  "  pm.expect(jsonData.data).to.have.property('analysis_count');",
+                  "  pm.expect(jsonData.data).to.have.property('costing_count');",
+                  "  pm.expect(jsonData.data).to.have.property('has_business_profile');",
+                  "});",
+                  "",
+                  "pm.test('Counts are numbers', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.product_count).to.be.a('number');",
+                  "  pm.expect(jsonData.data.analysis_count).to.be.a('number');",
+                  "  pm.expect(jsonData.data.costing_count).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('has_business_profile is boolean', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.has_business_profile).to.be.a('boolean');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/dashboard/summary/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", "dashboard", "summary", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard Summary (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Admin dashboard has required fields', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.success).to.be.true;",
+                  "  pm.expect(jsonData.data).to.have.property('total_users');",
+                  "  pm.expect(jsonData.data).to.have.property('total_products');",
+                  "  pm.expect(jsonData.data).to.have.property('total_analysis');",
+                  "  pm.expect(jsonData.data).to.have.property('has_business_profile');",
+                  "});",
+                  "",
+                  "pm.test('Totals are numbers', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.total_users).to.be.a('number');",
+                  "  pm.expect(jsonData.data.total_products).to.be.a('number');",
+                  "  pm.expect(jsonData.data.total_analysis).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/business-profile/dashboard/summary/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "business-profile", "dashboard", "summary", ""]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "your_umkm_token_here",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "your_refresh_token_here",
+      "type": "string"
+    },
+    {
+      "key": "admin_access_token",
+      "value": "your_admin_token_here",
+      "type": "string"
+    },
+    {
+      "key": "other_access_token",
+      "value": "another_umkm_token_here",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "business_profile_id",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}
+

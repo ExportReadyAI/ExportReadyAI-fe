@@ -21,14 +21,16 @@ const apiClient: AxiosInstance = axios.create({
  */
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage or cookie
+    // Get token from localStorage
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("API Request with token:", config.url, token.substring(0, 20) + "...") // Debug log
+    } else {
+      console.warn("API Request without token:", config.url) // Debug log
     }
     
-    // Add any other custom headers
     return config;
   },
   (error: AxiosError) => {
@@ -50,10 +52,21 @@ apiClient.interceptors.response.use(
       switch (error.response.status) {
         case 401:
           // Unauthorized - clear token and redirect to login
+          console.error("401 Unauthorized - Request URL:", error.config?.url) // Debug log
+          console.error("401 Unauthorized - Token in localStorage:", localStorage.getItem('token') ? "EXISTS" : "NOT FOUND") // Debug log
+          
           if (typeof window !== 'undefined') {
-            localStorage.removeItem('token');
-            // You can add redirect logic here if needed
-            // window.location.href = '/login';
+            // Don't redirect if we're already on login/register page
+            const currentPath = window.location.pathname
+            if (currentPath !== '/login' && 
+                !currentPath.includes('/register') &&
+                !currentPath.includes('/login') &&
+                !currentPath.includes('/en/login') &&
+                !currentPath.includes('/id/login')) {
+              localStorage.removeItem('token');
+              localStorage.removeItem('refreshToken');
+              window.location.href = '/login';
+            }
           }
           break;
         case 403:

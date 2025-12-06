@@ -1,0 +1,333 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/lib/stores/auth.store"
+import { businessProfileService } from "@/lib/api/services"
+import { Sidebar } from "@/components/layout/Sidebar"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Building2, ArrowLeft, MapPin, Factory, Calendar, Save } from "lucide-react"
+import type { BusinessProfile } from "@/lib/api/types"
+
+export default function EditBusinessProfilePage() {
+  const router = useRouter()
+  const { isAuthenticated } = useAuthStore()
+  const [profile, setProfile] = useState<BusinessProfile | null>(null)
+  const [formData, setFormData] = useState({
+    company_name: "",
+    address: "",
+    production_capacity_per_month: "",
+    year_established: "",
+  })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login")
+      return
+    }
+
+    fetchProfile()
+  }, [isAuthenticated, router])
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true)
+      const response = await businessProfileService.list()
+      
+      if (response.success) {
+        const profileData = Array.isArray(response.data)
+          ? response.data[0]
+          : (response.data as BusinessProfile)
+        
+        if (profileData) {
+          setProfile(profileData)
+          setFormData({
+            company_name: profileData.company_name,
+            address: profileData.address,
+            production_capacity_per_month: profileData.production_capacity_per_month,
+            year_established: profileData.year_established.toString(),
+          })
+        }
+      }
+    } catch (err: any) {
+      setError("Gagal memuat profil bisnis")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }))
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+    const currentYear = new Date().getFullYear()
+
+    if (!formData.company_name.trim()) {
+      newErrors.company_name = "Nama perusahaan harus diisi"
+    }
+
+    if (!formData.address.trim()) {
+      newErrors.address = "Alamat harus diisi"
+    }
+
+    if (!formData.production_capacity_per_month) {
+      newErrors.production_capacity_per_month =
+        "Kapasitas produksi harus diisi"
+    } else if (Number(formData.production_capacity_per_month) <= 0) {
+      newErrors.production_capacity_per_month =
+        "Kapasitas produksi harus lebih dari 0"
+    }
+
+    if (!formData.year_established) {
+      newErrors.year_established = "Tahun berdiri harus diisi"
+    } else {
+      const year = Number(formData.year_established)
+      if (year > currentYear) {
+        newErrors.year_established =
+          "Tahun berdiri tidak boleh lebih dari tahun sekarang"
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    if (!validateForm() || !profile) {
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      const response = await businessProfileService.update(profile.id, {
+        company_name: formData.company_name,
+        address: formData.address,
+        production_capacity_per_month: Number(
+          formData.production_capacity_per_month
+        ),
+        year_established: Number(formData.year_established),
+      })
+
+      if (response.success) {
+        router.push("/business-profile")
+      } else {
+        setError(response.message || "Gagal mengupdate profil bisnis")
+      }
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message ||
+        "Terjadi kesalahan saat mengupdate profil bisnis"
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F0F9FF]">
+        <div className="text-center space-y-4">
+          <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl bg-[#22C55E] shadow-[0_6px_0_0_#16a34a] animate-bounce">
+            <Building2 className="h-8 w-8 text-white" />
+          </div>
+          <p className="text-lg font-bold text-[#0C4A6E]">Memuat profil...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    router.push("/business-profile/create")
+    return null
+  }
+
+  return (
+    <div className="flex h-screen bg-[#F0F9FF]">
+      <Sidebar />
+      <main className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-8 py-8 max-w-2xl">
+          {/* Header */}
+          <div className="mb-6">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-2 text-[#0284C7] hover:text-[#0369a1] font-bold mb-4 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Kembali
+            </button>
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0284C7] shadow-[0_4px_0_0_#065985]">
+                <Building2 className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-extrabold text-[#0C4A6E]">
+                  Edit Profil Bisnis
+                </h1>
+                <p className="text-[#0284C7] font-medium">
+                  Update informasi usaha Anda
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Card */}
+          <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-8 shadow-[0_6px_0_0_#e0f2fe]">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Company Name */}
+              <div className="space-y-2">
+                <Label htmlFor="company_name" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-[#0284C7]" />
+                  Nama Perusahaan *
+                </Label>
+                <Input
+                  id="company_name"
+                  name="company_name"
+                  placeholder="Contoh: PT Maju Bersama"
+                  value={formData.company_name}
+                  onChange={handleChange}
+                  required
+                  disabled={submitting}
+                />
+                {errors.company_name && (
+                  <p className="text-sm font-medium text-[#EF4444]">
+                    {errors.company_name}
+                  </p>
+                )}
+              </div>
+
+              {/* Address */}
+              <div className="space-y-2">
+                <Label htmlFor="address" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-[#0284C7]" />
+                  Alamat Lengkap *
+                </Label>
+                <Textarea
+                  id="address"
+                  name="address"
+                  placeholder="Jl. Contoh No. 123, Kota, Provinsi"
+                  value={formData.address}
+                  onChange={handleChange}
+                  required
+                  disabled={submitting}
+                  rows={3}
+                />
+                {errors.address && (
+                  <p className="text-sm font-medium text-[#EF4444]">{errors.address}</p>
+                )}
+              </div>
+
+              {/* Production & Year */}
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="production_capacity_per_month" className="flex items-center gap-2">
+                    <Factory className="h-4 w-4 text-[#0284C7]" />
+                    Kapasitas Produksi/Bulan *
+                  </Label>
+                  <Input
+                    id="production_capacity_per_month"
+                    name="production_capacity_per_month"
+                    type="number"
+                    min="1"
+                    placeholder="1000"
+                    value={formData.production_capacity_per_month}
+                    onChange={handleChange}
+                    required
+                    disabled={submitting}
+                  />
+                  <p className="text-xs text-[#7DD3FC]">Dalam satuan unit</p>
+                  {errors.production_capacity_per_month && (
+                    <p className="text-sm font-medium text-[#EF4444]">
+                      {errors.production_capacity_per_month}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="year_established" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-[#0284C7]" />
+                    Tahun Berdiri *
+                  </Label>
+                  <Input
+                    id="year_established"
+                    name="year_established"
+                    type="number"
+                    min="1900"
+                    max={new Date().getFullYear()}
+                    placeholder="2020"
+                    value={formData.year_established}
+                    onChange={handleChange}
+                    required
+                    disabled={submitting}
+                  />
+                  {errors.year_established && (
+                    <p className="text-sm font-medium text-[#EF4444]">
+                      {errors.year_established}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => router.back()}
+                  disabled={submitting}
+                  className="flex-1 sm:flex-none"
+                >
+                  Batal
+                </Button>
+                <Button 
+                  type="submit" 
+                  size="lg"
+                  disabled={submitting}
+                  className="flex-1"
+                >
+                  {submitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Menyimpan...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Save className="h-5 w-5" />
+                      <span>Update Profil</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
