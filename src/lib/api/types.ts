@@ -34,7 +34,7 @@ export interface ApiRequestConfig {
 }
 
 // User Types
-export type UserRole = 'UMKM' | 'Admin';
+export type UserRole = 'UMKM' | 'Admin' | 'Buyer' | 'Forwarder';
 
 export interface User {
   id: number;
@@ -330,5 +330,177 @@ export interface CurrencySettings {
   rate_timestamp: string;
   manual_rate?: number;
 }
+
+// ==================== Module 6: Buyer Requests Types ====================
+
+export type BuyerRequestStatus = 'Open' | 'Matched' | 'Closed';
+
+export interface BuyerRequest {
+  id: number;
+  buyer_user: number;
+  buyer_email?: string;
+  buyer_full_name?: string;
+  product_category: string;
+  hs_code_target?: string;
+  spec_requirements: string;
+  target_volume: number;
+  destination_country: string;
+  keyword_tags: string[];
+  min_rank_required: number;
+  status: BuyerRequestStatus;
+  match_score?: number; // For UMKM view
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateBuyerRequestRequest {
+  product_category: string;
+  hs_code_target?: string;
+  spec_requirements: string;
+  target_volume: number;
+  destination_country: string;
+  keyword_tags?: string[];
+  min_rank_required?: number;
+}
+
+export interface UpdateBuyerRequestRequest extends Partial<CreateBuyerRequestRequest> {}
+
+export interface UpdateBuyerRequestStatusRequest {
+  status: BuyerRequestStatus;
+}
+
+export interface MatchedUMKM {
+  umkm_id: number;
+  company_name: string;
+  email: string;
+  contact_info?: string;
+  match_score: number;
+  base_score?: number;
+  spec_match_score?: number;
+  capability_score?: number;
+  business_profile_id?: number;
+}
+
+// ==================== Module 6: Forwarder Types ====================
+
+export interface ForwarderContactInfo {
+  phone?: string;
+  email?: string;
+  address?: string;
+  website?: string;
+}
+
+export interface ForwarderProfile {
+  id: number;
+  user_id: number;
+  company_name: string;
+  contact_info: ForwarderContactInfo;
+  specialization_routes: string[]; // Format: ["ID-JP", "ID-US"]
+  service_types: string[]; // Format: ["Sea Freight", "Air Freight"]
+  average_rating: number; // 1.0-5.0, default 0
+  total_reviews: number; // default 0
+  created_at: string;
+  updated_at: string;
+  // Additional fields for detail view
+  recent_reviews?: ForwarderReview[];
+  rating_distribution?: {
+    '5': number;
+    '4': number;
+    '3': number;
+    '2': number;
+    '1': number;
+  };
+}
+
+export interface CreateForwarderProfileRequest {
+  company_name: string;
+  contact_info: ForwarderContactInfo;
+  specialization_routes: string[];
+  service_types: string[];
+}
+
+export interface UpdateForwarderProfileRequest extends Partial<CreateForwarderProfileRequest> {}
+
+export interface ForwarderReview {
+  id: number;
+  forwarder_id: number;
+  umkm_id: number;
+  umkm_name?: string;
+  umkm_company?: string;
+  rating: number; // 1-5
+  review_text?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateForwarderReviewRequest {
+  rating: number;
+  review_text?: string;
+}
+
+export interface UpdateForwarderReviewRequest extends CreateForwarderReviewRequest {}
+
+export interface ForwarderStatistics {
+  total_reviews: number;
+  average_rating: number;
+  rating_distribution: {
+    '5': number;
+    '4': number;
+    '3': number;
+    '2': number;
+    '1': number;
+  };
+  total_umkm_partnerships: number;
+  recent_review_trend: Array<{
+    date: string;
+    count: number;
+  }>;
+}
+
+// ==================== Module 6: Buyer Profile Types ====================
+
+export interface BuyerContactInfo {
+  phone?: string;
+  email?: string;
+  address?: string;
+  website?: string;
+}
+
+export interface BuyerProfile {
+  id: number;
+  user_id: number;
+  company_name: string;
+  company_description?: string;
+  contact_info: BuyerContactInfo;
+  preferred_product_categories: string[]; // e.g., ["Makanan Olahan", "Kerajinan"]
+  preferred_product_categories_description?: string;
+  source_countries: string[]; // e.g., ["ID"]
+  source_countries_description?: string;
+  business_type?: string; // "Importir", "Distributor", "Retailer", "Trading Company"
+  business_type_description?: string;
+  annual_import_volume?: string; // e.g., "1000-5000 containers"
+  annual_import_volume_description?: string;
+  total_requests: number; // Computed field
+  user_email?: string; // Computed field
+  user_full_name?: string; // Computed field
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateBuyerProfileRequest {
+  company_name: string;
+  company_description?: string;
+  contact_info: BuyerContactInfo;
+  preferred_product_categories: string[];
+  preferred_product_categories_description?: string;
+  source_countries: string[];
+  source_countries_description?: string;
+  business_type?: string;
+  business_type_description?: string;
+  annual_import_volume?: string;
+  annual_import_volume_description?: string;
+}
+
+export interface UpdateBuyerProfileRequest extends Partial<CreateBuyerProfileRequest> {}
 
 

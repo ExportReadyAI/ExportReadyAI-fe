@@ -61,7 +61,14 @@ export default function LoginPage() {
         const savedToken = localStorage.getItem('token')
         console.log("Token saved to localStorage:", savedToken ? savedToken.substring(0, 20) + "..." : "NOT FOUND")
         
-        router.push("/dashboard")
+        // Role-based redirect
+        if (user.role === 'Forwarder') {
+          router.push("/forwarders/my-profile")
+        } else if (user.role === 'Buyer') {
+          router.push("/buyers/my-profile")
+        } else {
+          router.push("/dashboard")
+        }
       } else {
         setError(response.message || "Login gagal")
       }

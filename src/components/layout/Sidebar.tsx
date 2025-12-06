@@ -14,6 +14,9 @@ import {
   Rocket,
   FileText,
   Calculator,
+  ShoppingCart,
+  Truck,
+  UserCircle,
 } from "lucide-react"
 
 const menuItems = [
@@ -53,6 +56,41 @@ const menuItems = [
     color: "#22C55E",
   },
   {
+    title: "Buyer Requests",
+    href: "/buyer-requests",
+    icon: ShoppingCart,
+    roles: ["Admin", "Buyer"],
+    color: "#EC4899",
+  },
+  {
+    title: "Buyers",
+    href: "/buyers",
+    icon: ShoppingCart,
+    roles: ["Admin", "UMKM"],
+    color: "#EC4899",
+  },
+  {
+    title: "Forwarders",
+    href: "/forwarders",
+    icon: Truck,
+    roles: ["Admin", "UMKM"],
+    color: "#6366F1",
+  },
+  {
+    title: "My Profile",
+    href: "/forwarders/my-profile",
+    icon: Truck,
+    roles: ["Forwarder"],
+    color: "#6366F1",
+  },
+  {
+    title: "My Profile",
+    href: "/buyers/my-profile",
+    icon: UserCircle,
+    roles: ["Buyer"],
+    color: "#EC4899",
+  },
+  {
     title: "Users",
     href: "/users",
     icon: Users,
@@ -63,11 +101,13 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { user, logout, isAdmin } = useAuthStore()
+  const { user, logout, isAdmin, isUMKM, isBuyer, isForwarder } = useAuthStore()
 
   const filteredMenuItems = menuItems.filter((item) => {
     if (item.roles.includes("Admin") && isAdmin()) return true
-    if (item.roles.includes("UMKM") && !isAdmin()) return true
+    if (item.roles.includes("UMKM") && isUMKM()) return true
+    if (item.roles.includes("Buyer") && isBuyer()) return true
+    if (item.roles.includes("Forwarder") && isForwarder()) return true
     return false
   })
 

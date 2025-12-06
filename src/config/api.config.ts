@@ -76,6 +76,40 @@ export const API_ENDPOINTS = {
     delete: (id: string | number) => `/costings/${id}/`,
     currencySettings: '/costings/currency-settings/',
   },
+  
+  // Buyer Request endpoints (Module 6A)
+  buyerRequests: {
+    list: '/buyer-requests/',
+    create: '/buyer-requests/',
+    detail: (id: string | number) => `/buyer-requests/${id}/`,
+    update: (id: string | number) => `/buyer-requests/${id}/`,
+    updateStatus: (id: string | number) => `/buyer-requests/${id}/status/`,
+    delete: (id: string | number) => `/buyer-requests/${id}/`,
+    matchedUMKM: (id: string | number) => `/buyer-requests/${id}/matched-umkm/`,
+  },
+  
+  // Forwarder endpoints (Module 6B)
+  forwarders: {
+    list: '/forwarders/',
+    profile: '/forwarders/profile/',
+    profileMe: '/forwarders/profile/me/',
+    profileUpdate: (id: string | number) => `/forwarders/profile/${id}/`,
+    detail: (id: string | number) => `/forwarders/${id}/`,
+    createReview: (id: string | number) => `/forwarders/${id}/reviews/`,
+    updateReview: (forwarderId: string | number, reviewId: string | number) => `/forwarders/${forwarderId}/reviews/${reviewId}/`,
+    deleteReview: (forwarderId: string | number, reviewId: string | number) => `/forwarders/${forwarderId}/reviews/${reviewId}/delete/`,
+    recommendations: '/forwarders/recommendations/',
+    statistics: (id: string | number) => `/forwarders/${id}/statistics/`,
+  },
+  
+  // Buyer Profile endpoints (Module 6C)
+  buyers: {
+    list: '/buyers/',
+    profile: '/buyers/profile/',
+    profileMe: '/buyers/profile/me/',
+    profileUpdate: (id: string | number) => `/buyers/profile/${id}/`,
+    detail: (id: string | number) => `/buyers/${id}/`,
+  },
 } as const;
 
 
