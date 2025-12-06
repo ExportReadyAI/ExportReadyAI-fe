@@ -1,0 +1,1173 @@
+{
+  "info": {
+    "_postman_id": "m3-export-analysis-001",
+    "name": "ExportReady.AI - Module 3: Export Analysis & Compliance",
+    "description": "Postman Collection for Module 3 - Export Analysis & Compliance\n\nCovers all PBI-BE-M3 items (01-14):\n\n**API Endpoints:**\n- PBI-BE-M3-01: GET /export-analysis\n- PBI-BE-M3-02: GET /export-analysis/:id\n- PBI-BE-M3-03: POST /export-analysis/create\n- PBI-BE-M3-09: POST /export-analysis/:id/reanalyze\n- PBI-BE-M3-10: DELETE /export-analysis/:id\n- PBI-BE-M3-11: GET /countries\n- PBI-BE-M3-12: GET /countries/:code\n- PBI-BE-M3-13: POST /export-analysis/compare\n\n**Internal Services (tested via M3-03):**\n- PBI-BE-M3-04: AI Compliance Checker - Ingredient\n- PBI-BE-M3-05: AI Compliance Checker - Specification\n- PBI-BE-M3-06: AI Compliance Checker - Packaging\n- PBI-BE-M3-07: Calculate Readiness Score\n- PBI-BE-M3-08: Generate Recommendations\n\n**Database (tested via CRUD):**\n- PBI-BE-M3-14: ExportAnalysis Table",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "business_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "analysis_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "analysis_id_2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "test_email",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Setup - Auth & Prerequisites",
+      "item": [
+        {
+          "name": "0.1 Register User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "const testEmail = `m3test${timestamp}@example.com`;",
+                  "pm.collectionVariables.set('test_email', testEmail);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User registered successfully', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.user) {",
+                  "    pm.collectionVariables.set('user_id', response.data.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{test_email}}\",\n    \"password\": \"Test1234!\",\n    \"full_name\": \"Module 3 Tester\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "0.2 Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.tokens) {",
+                  "    pm.collectionVariables.set('access_token', response.data.tokens.access);",
+                  "    pm.collectionVariables.set('refresh_token', response.data.tokens.refresh);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{test_email}}\",\n    \"password\": \"Test1234!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "0.3 Create Business Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Business profile created', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.id) {",
+                  "    pm.collectionVariables.set('business_id', response.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"company_name\": \"Module 3 Test Corp\",\n    \"address\": \"Jl. Export Raya No. 3, Jakarta\",\n    \"production_capacity_per_month\": 5000,\n    \"certifications\": [\"Halal\", \"ISO 9001\", \"HACCP\"],\n    \"year_established\": 2020\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/business-profile/",
+              "host": ["{{base_url}}"],
+              "path": ["business-profile", ""]
+            }
+          }
+        },
+        {
+          "name": "0.4 Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Product created', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.id) {",
+                  "    pm.collectionVariables.set('product_id', response.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name_local\": \"Keripik Singkong Pedas Premium\",\n    \"category_id\": 1,\n    \"description_local\": \"Keripik singkong renyah dengan bumbu pedas khas Indonesia. Dibuat dari singkong pilihan yang digoreng hingga garing sempurna dengan rempah tradisional.\",\n    \"material_composition\": \"Singkong, minyak kelapa sawit, cabai merah, bawang putih, garam, MSG\",\n    \"production_technique\": \"Handmade\",\n    \"finishing_type\": \"Natural\",\n    \"quality_specs\": {\n        \"moisture\": \"3%\",\n        \"crispiness\": \"excellent\",\n        \"shelf_life\": \"6 months\"\n    },\n    \"durability_claim\": \"6 months\",\n    \"packaging_type\": \"Plastik\",\n    \"dimensions_l_w_h\": {\"l\": 25, \"w\": 18, \"h\": 8},\n    \"weight_net\": 0.25,\n    \"weight_gross\": 0.28\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/",
+              "host": ["{{base_url}}"],
+              "path": ["products", ""]
+            }
+          }
+        },
+        {
+          "name": "0.5 Enrich Product (Required before Analysis)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Product enriched successfully', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has HS Code', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('hs_code_recommendation');",
+                  "});",
+                  "",
+                  "pm.test('Has SKU', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('sku_generated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/enrich/",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", "enrich", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Countries API (PBI-BE-M3-11, M3-12)",
+      "item": [
+        {
+          "name": "1.1 GET /countries - List All (PBI-BE-M3-11)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Success true', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Returns array of countries', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Countries have regulations_count', function() {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.length > 0) {",
+                  "        pm.expect(response.data[0]).to.have.property('regulations_count');",
+                  "        pm.expect(response.data[0]).to.have.property('country_code');",
+                  "        pm.expect(response.data[0]).to.have.property('country_name');",
+                  "        pm.expect(response.data[0]).to.have.property('region');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/countries/",
+              "host": ["{{base_url}}"],
+              "path": ["countries", ""]
+            }
+          }
+        },
+        {
+          "name": "1.2 GET /countries - Filter by Region (PBI-BE-M3-11)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Filtered by Asia', function() {",
+                  "    const response = pm.response.json();",
+                  "    response.data.forEach(c => {",
+                  "        pm.expect(c.region.toLowerCase()).to.include('asia');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/countries/?region=Asia",
+              "host": ["{{base_url}}"],
+              "path": ["countries", ""],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "Asia"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.3 GET /countries - Search (PBI-BE-M3-11)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Found Japan', function() {",
+                  "    const response = pm.response.json();",
+                  "    const found = response.data.some(c => c.country_code === 'JP');",
+                  "    pm.expect(found).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/countries/?search=Japan",
+              "host": ["{{base_url}}"],
+              "path": ["countries", ""],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Japan"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.4 GET /countries/JP - Detail with Regulations (PBI-BE-M3-12)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Country code is JP', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.country_code).to.equal('JP');",
+                  "});",
+                  "",
+                  "pm.test('Has regulations array', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.regulations).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Has regulations_by_category (grouped)', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.regulations_by_category).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/countries/JP/",
+              "host": ["{{base_url}}"],
+              "path": ["countries", "JP", ""]
+            }
+          }
+        },
+        {
+          "name": "1.5 GET /countries/US - Detail (PBI-BE-M3-12)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Country code is US', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.country_code).to.equal('US');",
+                  "});",
+                  "",
+                  "pm.test('Has Ingredient regulations', function() {",
+                  "    const response = pm.response.json();",
+                  "    const cats = response.data.regulations_by_category;",
+                  "    pm.expect(cats).to.have.property('Ingredient');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/countries/US/",
+              "host": ["{{base_url}}"],
+              "path": ["countries", "US", ""]
+            }
+          }
+        },
+        {
+          "name": "1.6 GET /countries/AU - Detail (PBI-BE-M3-12)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Country is Australia', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.country_name).to.equal('Australia');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/countries/AU/",
+              "host": ["{{base_url}}"],
+              "path": ["countries", "AU", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Export Analysis CRUD (PBI-BE-M3-01,02,03,09,10,14)",
+      "item": [
+        {
+          "name": "2.1 POST /export-analysis/create - Japan (PBI-BE-M3-03, M3-04,05,06,07,08,14)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Success true', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// PBI-BE-M3-14: Database record created",
+                  "pm.test('Analysis ID returned (M3-14 DB)', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('id');",
+                  "});",
+                  "",
+                  "// PBI-BE-M3-04,05,06: AI Compliance Checkers ran",
+                  "pm.test('compliance_issues returned (M3-04,05,06)', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('compliance_issues');",
+                  "    pm.expect(response.data.compliance_issues).to.be.an('array');",
+                  "});",
+                  "",
+                  "// PBI-BE-M3-07: Calculate Readiness Score",
+                  "pm.test('readiness_score calculated (M3-07)', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('readiness_score');",
+                  "    pm.expect(response.data.readiness_score).to.be.a('number');",
+                  "    pm.expect(response.data.readiness_score).to.be.within(0, 100);",
+                  "});",
+                  "",
+                  "pm.test('status_grade is valid (M3-07)', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.status_grade).to.be.oneOf(['Ready', 'Warning', 'Critical']);",
+                  "});",
+                  "",
+                  "// PBI-BE-M3-08: Generate Recommendations",
+                  "pm.test('recommendations generated (M3-08)', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('recommendations');",
+                  "    pm.expect(response.data.recommendations).to.be.a('string');",
+                  "    pm.expect(response.data.recommendations.length).to.be.above(10);",
+                  "});",
+                  "",
+                  "pm.test('Has product and country info', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('product_name');",
+                  "    pm.expect(response.data).to.have.property('country_name');",
+                  "    pm.expect(response.data.country_code).to.equal('JP');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.id) {",
+                  "    pm.collectionVariables.set('analysis_id', response.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"product_id\": {{product_id}},\n    \"target_country_code\": \"JP\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/export-analysis/create/",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", "create", ""]
+            }
+          }
+        },
+        {
+          "name": "2.2 POST /export-analysis/create - US (PBI-BE-M3-03)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Country is US', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.country_code).to.equal('US');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.id) {",
+                  "    pm.collectionVariables.set('analysis_id_2', response.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"product_id\": {{product_id}},\n    \"target_country_code\": \"US\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/export-analysis/create/",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", "create", ""]
+            }
+          }
+        },
+        {
+          "name": "2.3 GET /export-analysis - List All (PBI-BE-M3-01)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns array', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Has pagination', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.pagination).to.have.property('page');",
+                  "    pm.expect(response.pagination).to.have.property('limit');",
+                  "    pm.expect(response.pagination).to.have.property('total');",
+                  "    pm.expect(response.pagination).to.have.property('pages');",
+                  "});",
+                  "",
+                  "pm.test('Includes product_name and country_name', function() {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.length > 0) {",
+                  "        pm.expect(response.data[0]).to.have.property('product_name');",
+                  "        pm.expect(response.data[0]).to.have.property('country_name');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export-analysis/",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", ""]
+            }
+          }
+        },
+        {
+          "name": "2.4 GET /export-analysis - Filter country_code (PBI-BE-M3-01)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Filtered by JP', function() {",
+                  "    const response = pm.response.json();",
+                  "    response.data.forEach(a => {",
+                  "        pm.expect(a.country_code).to.equal('JP');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export-analysis/?country_code=JP",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", ""],
+              "query": [
+                {
+                  "key": "country_code",
+                  "value": "JP"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.5 GET /export-analysis - Filter score_min/max (PBI-BE-M3-01)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Scores within range 0-50', function() {",
+                  "    const response = pm.response.json();",
+                  "    response.data.forEach(a => {",
+                  "        pm.expect(a.readiness_score).to.be.at.most(50);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export-analysis/?score_min=0&score_max=50",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", ""],
+              "query": [
+                {
+                  "key": "score_min",
+                  "value": "0"
+                },
+                {
+                  "key": "score_max",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.6 GET /export-analysis - Search (PBI-BE-M3-01)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export-analysis/?search=Keripik",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", ""],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Keripik"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.7 GET /export-analysis - Pagination (PBI-BE-M3-01)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Page 1 with limit 1', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.pagination.page).to.equal(1);",
+                  "    pm.expect(response.pagination.limit).to.equal(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export-analysis/?page=1&limit=1",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.8 GET /export-analysis/:id - Detail (PBI-BE-M3-02)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has full product details', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('product_name');",
+                  "    pm.expect(response.data).to.have.property('product_category');",
+                  "    pm.expect(response.data).to.have.property('product_material');",
+                  "    pm.expect(response.data).to.have.property('product_packaging');",
+                  "});",
+                  "",
+                  "pm.test('Has full country details', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('country_name');",
+                  "    pm.expect(response.data).to.have.property('country_code');",
+                  "    pm.expect(response.data).to.have.property('country_region');",
+                  "});",
+                  "",
+                  "pm.test('Has compliance_issues array', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.compliance_issues).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Has recommendations text', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.recommendations).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Has analyzed_at timestamp', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('analyzed_at');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export-analysis/{{analysis_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", "{{analysis_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "2.9 POST /export-analysis/:id/reanalyze (PBI-BE-M3-09)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Success message', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.message).to.include('re-analyzed');",
+                  "});",
+                  "",
+                  "pm.test('Has updated compliance_issues', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.compliance_issues).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Has updated readiness_score', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.readiness_score).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Has updated recommendations', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.recommendations).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('analyzed_at updated', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('analyzed_at');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export-analysis/{{analysis_id}}/reanalyze/",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", "{{analysis_id}}", "reanalyze", ""]
+            }
+          }
+        },
+        {
+          "name": "2.10 DELETE /export-analysis/:id (PBI-BE-M3-10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Delete success', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.message).to.include('deleted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export-analysis/{{analysis_id_2}}/",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", "{{analysis_id_2}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Multi-Country Compare (PBI-BE-M3-13)",
+      "item": [
+        {
+          "name": "3.1 POST /export-analysis/compare - 3 Countries (PBI-BE-M3-13)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Success', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Returns 3 analyses', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.be.an('array');",
+                  "    pm.expect(response.data.length).to.equal(3);",
+                  "});",
+                  "",
+                  "pm.test('Each has readiness_score', function() {",
+                  "    const response = pm.response.json();",
+                  "    response.data.forEach(a => {",
+                  "        pm.expect(a).to.have.property('readiness_score');",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('Each has country_code', function() {",
+                  "    const response = pm.response.json();",
+                  "    const codes = response.data.map(a => a.country_code);",
+                  "    pm.expect(codes).to.include('AU');",
+                  "    pm.expect(codes).to.include('SG');",
+                  "    pm.expect(codes).to.include('DE');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"product_id\": {{product_id}},\n    \"country_codes\": [\"AU\", \"SG\", \"DE\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/export-analysis/compare/",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", "compare", ""]
+            }
+          }
+        },
+        {
+          "name": "3.2 POST /export-analysis/compare - 5 Countries Max (PBI-BE-M3-13)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns 5 analyses (max)', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data.length).to.equal(5);",
+                  "});",
+                  "",
+                  "pm.test('Message shows 5 countries', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('5');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"product_id\": {{product_id}},\n    \"country_codes\": [\"JP\", \"US\", \"AU\", \"CN\", \"AE\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/export-analysis/compare/",
+              "host": ["{{base_url}}"],
+              "path": ["export-analysis", "compare", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

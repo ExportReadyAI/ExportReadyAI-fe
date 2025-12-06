@@ -190,4 +190,145 @@ export interface ManualOverrideRequest {
   description_english_b2b?: string;
 }
 
+// ==================== Country Types ====================
+
+export interface Country {
+  country_code: string;
+  country_name: string;
+  region: string;
+  regulations_count?: number;
+  flag?: string;
+}
+
+export interface CountryRegulation {
+  id: number;
+  country_code: string;
+  rule_key: string;
+  rule_value: string;
+  description: string;
+  category: 'Ingredient' | 'Specification' | 'Packaging' | 'Labeling' | 'Other';
+}
+
+export interface CountryDetail extends Country {
+  regulations: CountryRegulation[];
+  regulations_by_category: {
+    [category: string]: CountryRegulation[];
+  };
+}
+
+// ==================== Export Analysis Types ====================
+
+export type ComplianceSeverity = 'critical' | 'major' | 'minor';
+export type StatusGrade = 'Ready' | 'Warning' | 'Critical';
+
+export interface ComplianceIssue {
+  id: number;
+  type: string;
+  severity: ComplianceSeverity;
+  description: string;
+  your_value?: string;
+  required_value?: string;
+  category: 'Ingredient' | 'Specification' | 'Packaging' | 'Labeling' | 'Other';
+}
+
+export interface ExportAnalysis {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_category?: string;
+  product_material?: string;
+  product_packaging?: string;
+  target_country_code: string;
+  country_name: string;
+  country_region?: string;
+  readiness_score: number;
+  status_grade: StatusGrade;
+  compliance_issues: ComplianceIssue[];
+  recommendations: string;
+  analyzed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateExportAnalysisRequest {
+  product_id: number;
+  target_country_code: string;
+}
+
+export interface CompareCountriesRequest {
+  product_id: number;
+  country_codes: string[]; // Max 5
+}
+
+export interface CompareCountriesResponse {
+  analyses: ExportAnalysis[];
+  common_issues?: ComplianceIssue[];
+}
+
+// ==================== Costing Types ====================
+
+export interface Costing {
+  id: number;
+  product_id: number;
+  product_name?: string;
+  cogs_per_unit: number | string; // IDR (can be string from API)
+  packing_cost: number | string; // IDR (can be string from API)
+  target_margin_percent: number | string; // Can be string from API
+  // Backend uses "recommended_" prefix
+  recommended_exw_price: number | string | null;
+  recommended_fob_price: number | string | null;
+  recommended_cif_price: number | string | null;
+  // Legacy field names (for backward compatibility)
+  exw_price_usd?: number;
+  fob_price_usd?: number;
+  cif_price_usd?: number;
+  exw_price_idr?: number;
+  fob_price_idr?: number;
+  cif_price_idr?: number;
+  // Container info
+  container_20ft_capacity: number; // Backend uses this name
+  container_capacity_20ft?: number; // Legacy
+  container_utilization_percent?: number; // May not be in response
+  optimization_notes?: string;
+  // Exchange rate (may not be in response)
+  exchange_rate?: number;
+  exchange_rate_source?: string;
+  exchange_rate_timestamp?: string;
+  calculated_at: string;
+  created_at: string;
+  updated_at: string;
+  // Breakdown components (may not be in response)
+  price_breakdown?: {
+    cogs: number;
+    packing: number;
+    margin: number;
+    trucking?: number;
+    document?: number;
+    freight?: number;
+    insurance?: number;
+  };
+}
+
+export interface CreateCostingRequest {
+  product_id: number;
+  cogs_per_unit: number;
+  packing_cost: number;
+  target_margin_percent: number;
+  exchange_rate?: number; // Optional, will use current if not provided
+}
+
+export interface UpdateCostingRequest {
+  cogs_per_unit: number;
+  packing_cost: number;
+  target_margin_percent: number;
+  exchange_rate?: number;
+}
+
+export interface CurrencySettings {
+  current_rate: number;
+  rate_source: string;
+  rate_timestamp: string;
+  manual_rate?: number;
+}
+
 
