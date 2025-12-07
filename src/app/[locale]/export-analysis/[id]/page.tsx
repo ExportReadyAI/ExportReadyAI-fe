@@ -14,7 +14,6 @@ import { DeleteAnalysisModal } from "@/components/shared/DeleteAnalysisModal"
 import { ReanalyzeModal } from "@/components/shared/ReanalyzeModal"
 import { ProductChangedAlert } from "@/components/shared/ProductChangedAlert"
 import { InlineComplianceEditor } from "@/components/shared/InlineComplianceEditor"
-import ReactMarkdown from "react-markdown"
 import {
   ArrowLeft,
   FileText,
@@ -27,6 +26,13 @@ import {
   Download,
   RefreshCw,
   BookOpen,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  DollarSign,
+  FolderOpen,
+  FileCheck,
+  Target,
 } from "lucide-react"
 import type { ExportAnalysis, Product } from "@/lib/api/types"
 
@@ -41,8 +47,19 @@ export default function ExportAnalysisDetailPage() {
   const [reanalyzeModalOpen, setReanalyzeModalOpen] = useState(false)
   const [reanalyzing, setReanalyzing] = useState(false)
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null)
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set())
 
   const analysisId = params?.id as string
+
+  const toggleItem = (index: number) => {
+    const newExpanded = new Set(expandedItems)
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index)
+    } else {
+      newExpanded.add(index)
+    }
+    setExpandedItems(newExpanded)
+  }
 
   const fetchProductData = async (productId: number) => {
     try {
@@ -404,26 +421,291 @@ export default function ExportAnalysisDetailPage() {
               </CardHeader>
               <CardContent>
                 {analysis.recommendations ? (
-                  <div className="bg-[#F0F9FF] rounded-2xl p-4">
-                    <div className="prose prose-sm max-w-none text-[#0C4A6E]">
-                      <ReactMarkdown
-                        components={{
-                          h1: ({...props}) => <h1 className="text-xl font-bold text-[#0C4A6E] mb-3" {...props} />,
-                          h2: ({...props}) => <h2 className="text-lg font-bold text-[#0C4A6E] mb-2" {...props} />,
-                          h3: ({...props}) => <h3 className="text-base font-bold text-[#0284C7] mb-2" {...props} />,
-                          p: ({...props}) => <p className="text-sm text-[#0C4A6E] mb-2 leading-relaxed" {...props} />,
-                          ul: ({...props}) => <ul className="list-disc list-inside space-y-1 mb-3" {...props} />,
-                          ol: ({...props}) => <ol className="list-decimal list-inside space-y-1 mb-3" {...props} />,
-                          li: ({...props}) => <li className="text-sm text-[#0C4A6E] font-medium" {...props} />,
-                          strong: ({...props}) => <strong className="font-bold text-[#0369a1]" {...props} />,
-                          em: ({...props}) => <em className="italic text-[#0284C7]" {...props} />,
-                          code: ({...props}) => <code className="bg-[#E0F2FE] px-2 py-1 rounded text-xs font-mono text-[#0C4A6E]" {...props} />,
-                          blockquote: ({...props}) => <blockquote className="border-l-4 border-[#0284C7] pl-4 italic text-[#64748b]" {...props} />,
-                        }}
-                      >
-                        {analysis.recommendations}
-                      </ReactMarkdown>
-                    </div>
+                  <div className="space-y-2">
+                    {(() => {
+                      // Parse recommendations into structured items
+                      const lines = analysis.recommendations.split('\n')
+                      const items: Array<{ title: string; details: string[]; problem?: string; solutions?: string[] }> = []
+                      let currentItem: { title: string; details: string[]; problem?: string; solutions?: string[] } | null = null
+                      let inProblemSection = false
+                      let inSolutionSection = false
+
+                      lines.forEach(line => {
+                        // First clean the line
+                        let cleanLine = line
+                          .replace(/^#{1,6}\s+/, '')
+                          .replace(/\*\*([^*]+)\*\*/g, '$1')
+                          .replace(/\*([^*]+)\*/g, '$1')
+                          .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
+                          .replace(/`([^`]+)`/g, '$1')
+                          .trim()
+
+                        // Skip empty lines or lines with only bullets
+                        if (!cleanLine || cleanLine === '•' || cleanLine === '-' || cleanLine === '--' || cleanLine === '–' || cleanLine === '—') return
+
+                        // Check if it's a numbered item OR week/minggu format (main point)
+                        const numberedMatch = cleanLine.match(/^(\d+)\.\s*(.+)/)
+                        const weekMatch = cleanLine.match(/^(Minggu|Week)\s+(\d+)[-:]?\s*(.+)?/i)
+                        
+                        if (numberedMatch || weekMatch) {
+                          if (currentItem) {
+                            items.push(currentItem)
+                          }
+                          
+                          if (weekMatch) {
+                            // Week format - don't create accordion, just show as info card
+                            const weekNum = weekMatch[2]
+                            const weekTitle = weekMatch[3] || ''
+                            currentItem = { 
+                              title: `Minggu ${weekNum}${weekTitle ? ': ' + weekTitle : ''}`, 
+                              details: [],
+                              isWeek: true as any
+                            }
+                          } else {
+                            currentItem = { title: numberedMatch[2], details: [] }
+                          }
+                          
+                          inProblemSection = false
+                          inSolutionSection = false
+                          return
+                        }
+
+                        // Check for section markers
+                        if (cleanLine.match(/^(Masalah|Problem)\s*:?\s*$/i)) {
+                          inProblemSection = true
+                          inSolutionSection = false
+                          return
+                        }
+                        
+                        if (cleanLine.match(/^(Langkah Konkret|Solusi|Solution|Langkah)\s*:?\s*$/i)) {
+                          inProblemSection = false
+                          inSolutionSection = true
+                          if (currentItem && !currentItem.solutions) {
+                            currentItem.solutions = []
+                          }
+                          return
+                        }
+
+                        // If we have a current item, add content based on section
+                        if (currentItem) {
+                          // Remove leading bullets/dashes
+                          cleanLine = cleanLine.replace(/^[•\-–—*]+\s*/, '').trim()
+                          
+                          // Skip if empty after cleaning
+                          if (!cleanLine) return
+                          
+                          // Categorize the content
+                          if (inProblemSection) {
+                            currentItem.problem = cleanLine
+                          } else if (inSolutionSection) {
+                            if (!currentItem.solutions) currentItem.solutions = []
+                            currentItem.solutions.push(cleanLine)
+                          } else {
+                            currentItem.details.push(cleanLine)
+                          }
+                        }
+                      })
+
+                      // Push the last item
+                      if (currentItem) {
+                        items.push(currentItem)
+                      }
+
+                      return items.map((item, idx) => {
+                        // Check if this is a week item (no accordion needed)
+                        if ((item as any).isWeek) {
+                          return (
+                            <div key={idx} className="bg-gradient-to-r from-[#E0F2FE] to-[#BAE6FD] rounded-xl p-4 border-2 border-[#0284C7]">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0284C7] text-white font-bold text-sm">
+                                  {idx + 1}
+                                </div>
+                                <span className="text-sm font-bold text-[#0C4A6E]">{item.title}</span>
+                              </div>
+                              {item.details.length > 0 && (
+                                <div className="mt-3 ml-11 space-y-1">
+                                  {item.details.map((detail, dIdx) => (
+                                    <p key={dIdx} className="text-sm text-[#0C4A6E]">{detail}</p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        }
+
+                        // Check if item has content (details, problem, or solutions)
+                        const hasContent = (item.details && item.details.length > 0) || 
+                                          item.problem || 
+                                          (item.solutions && item.solutions.length > 0)
+
+                        // If no content, show as info card instead of accordion
+                        if (!hasContent) {
+                          return (
+                            <div key={idx} className="bg-[#F0F9FF] rounded-xl p-4 border-2 border-[#BAE6FD]">
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0284C7] text-white font-bold text-sm flex-shrink-0">
+                                  {idx + 1}
+                                </span>
+                                <span className="text-sm font-bold text-[#0C4A6E]">{item.title}</span>
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        // Regular accordion item with content
+                        return (
+                        <div key={idx} className="bg-[#F0F9FF] rounded-xl border-2 border-[#BAE6FD] overflow-hidden">
+                          <button
+                            onClick={() => toggleItem(idx)}
+                            className="w-full flex items-center justify-between gap-3 p-4 hover:bg-[#E0F2FE] transition-colors"
+                          >
+                            <div className="flex items-center gap-3 flex-1 text-left">
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0284C7] text-white font-bold text-sm flex-shrink-0">
+                                {idx + 1}
+                              </span>
+                              <span className="text-sm font-bold text-[#0C4A6E] uppercase">
+                                {item.title}
+                              </span>
+                            </div>
+                            {expandedItems.has(idx) ? (
+                              <ChevronDown className="h-5 w-5 text-[#0284C7] flex-shrink-0" />
+                            ) : (
+                              <ChevronRight className="h-5 w-5 text-[#0284C7] flex-shrink-0" />
+                            )}
+                          </button>
+                          {expandedItems.has(idx) && (item.details.length > 0 || item.problem || item.solutions) && (
+                            <div className="px-4 pb-4 pt-2 bg-white border-t border-[#BAE6FD]">
+                              {/* Show Problem Section if exists */}
+                              {item.problem && (
+                                <div className="mb-4 bg-[#FEE2E2] rounded-lg p-3 border-l-4 border-[#EF4444]">
+                                  <div className="flex items-start gap-2">
+                                    <AlertTriangle className="h-5 w-5 text-[#DC2626] flex-shrink-0 mt-0.5" />
+                                    <div>
+                                      <p className="text-xs font-bold text-[#991B1B] uppercase mb-1">Masalah</p>
+                                      <p className="text-sm text-[#991B1B] font-medium">{item.problem}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Show Solutions Section if exists */}
+                              {item.solutions && item.solutions.length > 0 && (
+                                <div className="mb-3">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <CheckCircle2 className="h-5 w-5 text-[#22C55E]" />
+                                    <p className="text-xs font-bold text-[#0C4A6E] uppercase">Langkah Penyelesaian</p>
+                                  </div>
+                                  {(() => {
+                                    // Check content type for solutions
+                                    const hasTimeline = item.solutions.some(d => d.toLowerCase().includes('timeline') || d.toLowerCase().includes('bulan'))
+                                    const hasBudget = item.solutions.some(d => d.toLowerCase().includes('budget') || d.toLowerCase().includes('rp'))
+                                    const hasDocuments = item.solutions.some(d => d.toLowerCase().includes('certificate') || d.toLowerCase().includes('gacc') || d.toLowerCase().includes('gb standards'))
+                                    
+                                    if (hasTimeline && hasBudget) {
+                                      return (
+                                        <div className="grid gap-3 md:grid-cols-2">
+                                          {item.solutions.map((detail, dIdx) => {
+                                            const isTimeline = detail.toLowerCase().includes('timeline')
+                                            const isBudget = detail.toLowerCase().includes('budget')
+                                            
+                                            if (isTimeline || isBudget) {
+                                              const match = detail.match(/:\s*(.+)/)
+                                              const value = match ? match[1] : detail
+                                              
+                                              return (
+                                                <div key={dIdx} className="bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-xl p-4 border-2 border-[#F59E0B] shadow-sm">
+                                                  <div className="flex items-start gap-3">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F59E0B] text-white flex-shrink-0">
+                                                      {isTimeline ? <Clock className="h-5 w-5" /> : <DollarSign className="h-5 w-5" />}
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-xs font-bold text-[#92400E] uppercase mb-1">
+                                                        {isTimeline ? 'Timeline' : 'Budget Total'}
+                                                      </p>
+                                                      <p className="text-sm font-extrabold text-[#92400E]">{value}</p>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )
+                                            }
+                                            return null
+                                          })}
+                                        </div>
+                                      )
+                                    }
+                                    
+                                    if (hasDocuments) {
+                                      return (
+                                        <div className="grid gap-2 sm:grid-cols-2">
+                                          {item.solutions.map((detail, dIdx) => {
+                                            if (detail.toLowerCase().includes('folder digital') || detail.toLowerCase().includes('berikan copy') || detail.toLowerCase().includes('backup')) {
+                                              return (
+                                                <div key={dIdx} className="col-span-2 flex items-start gap-2 text-sm text-[#0C4A6E] leading-relaxed mb-2 font-medium">
+                                                  <Info className="h-4 w-4 mt-0.5 text-[#0284C7] flex-shrink-0" />
+                                                  <span>{detail}</span>
+                                                </div>
+                                              )
+                                            }
+                                            
+                                            return (
+                                              <div key={dIdx} className="bg-[#F0F9FF] rounded-lg p-3 border border-[#BAE6FD] hover:border-[#0284C7] transition-colors">
+                                                <div className="flex items-start gap-2">
+                                                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-[#22C55E] flex-shrink-0" />
+                                                  <span className="text-xs text-[#0C4A6E] leading-relaxed font-medium">{detail}</span>
+                                                </div>
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      )
+                                    }
+                                    
+                                    return (
+                                      <ul className="space-y-2">
+                                        {item.solutions.map((detail, dIdx) => {
+                                          const isPriority = detail.toLowerCase().includes('prioritas') || detail.toLowerCase().includes('penting')
+                                          
+                                          if (isPriority) {
+                                            return (
+                                              <li key={dIdx} className="bg-gradient-to-r from-[#FEE2E2] to-[#FECACA] rounded-lg p-3 border-2 border-[#EF4444]">
+                                                <div className="flex items-start gap-2">
+                                                  <Target className="h-5 w-5 mt-0.5 text-[#DC2626] flex-shrink-0" />
+                                                  <span className="text-sm text-[#991B1B] font-bold leading-relaxed">{detail}</span>
+                                                </div>
+                                              </li>
+                                            )
+                                          }
+                                          
+                                          return (
+                                            <li key={dIdx} className="flex items-start gap-2 text-sm text-[#0C4A6E] leading-relaxed">
+                                              <span className="text-[#22C55E] font-bold mt-0.5 flex-shrink-0">✓</span>
+                                              <span>{detail}</span>
+                                            </li>
+                                          )
+                                        })}
+                                      </ul>
+                                    )
+                                  })()}
+                                </div>
+                              )}
+
+                              {/* Show other details if no problem/solution structure */}
+                              {!item.problem && !item.solutions && item.details.length > 0 && (
+                                <ul className="space-y-2">
+                                  {item.details.map((detail, dIdx) => (
+                                    <li key={dIdx} className="flex items-start gap-2 text-sm text-[#0C4A6E] leading-relaxed">
+                                      <span className="text-[#0284C7] font-bold mt-0.5 flex-shrink-0">•</span>
+                                      <span>{detail}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                      })
+                    })()}
                   </div>
                 ) : (
                   <p className="text-sm text-[#7DD3FC]">Tidak ada rekomendasi</p>

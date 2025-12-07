@@ -494,6 +494,41 @@ export default function CreateProductPage() {
               </Alert>
             )}
 
+            {/* Info Tips Box */}
+            <div className="bg-gradient-to-r from-[#FEF3C7] via-[#FDE68A] to-[#FCD34D] border-2 border-[#F59E0B] rounded-3xl p-6 shadow-[0_4px_0_0_#F59E0B]">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F59E0B] shadow-[0_4px_0_0_#d97706] flex-shrink-0">
+                  <CheckCircle2 className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-[#92400E] mb-2">
+                    💡 Tips Penting untuk Analisis AI yang Akurat
+                  </h3>
+                  <p className="text-[#92400E] font-medium mb-3">
+                    Semakin lengkap dan detail data yang Anda berikan, semakin akurat analisis ekspor dari AI!
+                  </p>
+                  <ul className="space-y-2 text-sm text-[#92400E]">
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#F59E0B] font-bold">✓</span>
+                      <span><strong>Isi semua field</strong> dengan informasi yang lengkap dan spesifik</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#F59E0B] font-bold">✓</span>
+                      <span><strong>Detail adalah kunci</strong> - semakin detail, semakin baik hasil analisisnya</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#F59E0B] font-bold">✓</span>
+                      <span><strong>Quality Specs</strong> sangat penting untuk compliance & standar internasional</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#F59E0B] font-bold">✓</span>
+                      <span><strong>Dimensi & berat</strong> yang akurat membantu kalkulasi biaya pengiriman</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             {/* Section: Info Dasar */}
             <Section
               icon={<FileText className="h-5 w-5 text-white" />}
