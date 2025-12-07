@@ -546,4 +546,187 @@ export interface CreateEducationalArticleRequest {
 
 export interface UpdateEducationalArticleRequest extends Partial<Omit<CreateEducationalArticleRequest, 'module_id'>> {}
 
+// ==================== AI Marketing Features Types ====================
+
+// Market Intelligence Types (AI 2)
+export interface RecommendedCountry {
+  country: string;
+  country_code: string;
+  score: number;
+  reason: string;
+  market_size: string;
+  competition_level: string;
+  suggested_price_range: string;
+  entry_strategy: string;
+}
+
+export interface CountryToAvoid {
+  country: string;
+  country_code: string;
+  reason: string;
+}
+
+export interface MarketIntelligence {
+  id?: number;
+  product_id: number;
+  recommended_countries: RecommendedCountry[];
+  countries_to_avoid: CountryToAvoid[];
+  market_trends: string[];
+  competitive_landscape: string;
+  growth_opportunities: string[];
+  risks_and_challenges: string[];
+  overall_recommendation: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateMarketIntelligenceRequest {
+  current_price_usd?: number;
+  production_capacity?: number;
+}
+
+// Pricing Calculator Types (AI 3)
+export interface PricingBreakdown {
+  base_cost_idr: number;
+  margin_amount_idr: number;
+  total_idr: number;
+  local_handling_estimate_usd: number;
+  shipping_estimate_usd: number;
+}
+
+export interface ProductPricing {
+  id?: number;
+  product_id: number;
+  cogs_per_unit_idr: number;
+  target_margin_percent: number;
+  exchange_rate_used: number;
+  exw_price_usd: number;
+  fob_price_usd: number;
+  cif_price_usd: number;
+  target_country_code: string;
+  pricing_insight: string;
+  pricing_breakdown: PricingBreakdown;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateProductPricingRequest {
+  cogs_per_unit_idr: number;
+  target_margin_percent: number;
+  target_country_code?: string;
+}
+
+// ==================== Catalog Types ====================
+
+export interface CatalogImage {
+  id: number;
+  catalog_id: number;
+  image_url: string;
+  alt_text?: string;
+  sort_order: number;
+  is_primary: boolean;
+  created_at?: string;
+}
+
+export interface CatalogVariant {
+  id: number;
+  catalog_id: number;
+  variant_name: string;
+  variant_price: number;
+  attributes?: Record<string, any>;
+  moq_variant: number;
+  sku?: string;
+  created_at?: string;
+}
+
+export interface CatalogTechnicalSpecs {
+  product_name?: string;
+  material?: string;
+  dimensions?: string;
+  weight_net?: string;
+  finishing?: string;
+  packaging?: string;
+  certifications?: string[];
+  care_instructions?: string;
+}
+
+export interface CatalogSafetyInfo {
+  material_safety?: string;
+  warnings?: string[];
+  storage?: string;
+  handling?: string;
+}
+
+export interface Catalog {
+  id: number;
+  product_id: number;
+  product_name?: string;
+  display_name: string;
+  base_price_exw: number;
+  marketing_description?: string;
+  export_description?: string;
+  technical_specs?: CatalogTechnicalSpecs;
+  safety_info?: CatalogSafetyInfo;
+  min_order_quantity: number;
+  unit_type: string;
+  lead_time_days: number;
+  tags?: string[];
+  is_published: boolean;
+  images: CatalogImage[];
+  variants: CatalogVariant[];
+  primary_image?: string;
+  variant_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCatalogRequest {
+  product_id: number;
+  display_name: string;
+  base_price_exw: number;
+  marketing_description?: string;
+  min_order_quantity?: number;
+  unit_type?: string;
+  lead_time_days?: number;
+  tags?: string[];
+}
+
+export interface UpdateCatalogRequest extends Partial<CreateCatalogRequest> {
+  is_published?: boolean;
+  export_description?: string;
+  technical_specs?: CatalogTechnicalSpecs;
+  safety_info?: CatalogSafetyInfo;
+}
+
+export interface CreateCatalogImageRequest {
+  image_url: string;
+  alt_text?: string;
+  sort_order?: number;
+  is_primary?: boolean;
+}
+
+export interface UpdateCatalogImageRequest extends Partial<CreateCatalogImageRequest> {}
+
+export interface CreateCatalogVariantRequest {
+  variant_name: string;
+  variant_price: number;
+  attributes?: Record<string, any>;
+  moq_variant?: number;
+  sku?: string;
+}
+
+export interface UpdateCatalogVariantRequest extends Partial<CreateCatalogVariantRequest> {}
+
+// AI Description Generator Response
+export interface AIDescriptionResponse {
+  export_description: string;
+  technical_specs: CatalogTechnicalSpecs;
+  safety_info: CatalogSafetyInfo;
+  saved_to_catalog: boolean;
+}
+
+export interface GenerateAIDescriptionRequest {
+  save_to_catalog?: boolean;
+}
+
 
