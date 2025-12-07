@@ -8,6 +8,12 @@ import "../globals.css";
 export const metadata: Metadata = {
   title: "Export Management System",
   description: "Professional export management application",
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.ico',
+  },
 };
 
 export function generateStaticParams() {
