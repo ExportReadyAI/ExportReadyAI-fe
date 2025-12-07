@@ -156,18 +156,18 @@ export function AIDescriptionGenerator({
           {/* Technical Specs */}
           {catalog.technical_specs && Object.keys(catalog.technical_specs).length > 0 && (
             <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe]">
-              <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-4">
+              <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-6">
                 <FileText className="h-5 w-5 text-[#0284C7]" />
                 Technical Specifications
               </h3>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 {Object.entries(catalog.technical_specs).map(([key, value]) => (
-                  <div key={key} className="flex justify-between p-3 bg-[#F0F9FF] rounded-xl">
-                    <span className="font-medium text-[#0284C7] capitalize">
+                  <div key={key} className="p-4 bg-[#F0F9FF] rounded-xl border border-[#e0f2fe]">
+                    <span className="text-xs font-semibold text-[#0284C7] uppercase tracking-wide block mb-2">
                       {key.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-[#0C4A6E] font-bold">
-                      {Array.isArray(value) ? value.join(', ') : String(value)}
+                    <span className="text-[#0C4A6E] font-bold text-base">
+                      {Array.isArray(value) ? value.join(', ') : String(value) || '-'}
                     </span>
                   </div>
                 ))}
@@ -178,18 +178,18 @@ export function AIDescriptionGenerator({
           {/* Safety Info */}
           {catalog.safety_info && Object.keys(catalog.safety_info).length > 0 && (
             <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe]">
-              <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-4">
+              <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-6">
                 <Shield className="h-5 w-5 text-[#F59E0B]" />
                 Safety Information
               </h3>
-              <div className="space-y-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 {Object.entries(catalog.safety_info).map(([key, value]) => (
-                  <div key={key} className="p-3 bg-[#fffbeb] rounded-xl">
-                    <span className="font-bold text-[#0C4A6E] capitalize block mb-1">
+                  <div key={key} className="p-4 bg-[#fffbeb] rounded-xl border border-[#fcd34d]">
+                    <span className="text-xs font-semibold text-[#b45309] uppercase tracking-wide block mb-2">
                       {key.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-[#92400e]">
-                      {Array.isArray(value) ? value.join(', ') : String(value)}
+                    <span className="text-[#92400e] font-medium">
+                      {Array.isArray(value) ? value.join(', ') : String(value) || '-'}
                     </span>
                   </div>
                 ))}
@@ -307,18 +307,18 @@ export function AIDescriptionGenerator({
           {/* Preview Technical Specs */}
           {preview.technical_specs && Object.keys(preview.technical_specs).length > 0 && (
             <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe]">
-              <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-4">
+              <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-6">
                 <FileText className="h-5 w-5 text-[#0284C7]" />
                 Technical Specifications
               </h3>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 {Object.entries(preview.technical_specs).map(([key, value]) => (
-                  <div key={key} className="flex justify-between p-3 bg-[#F0F9FF] rounded-xl">
-                    <span className="font-medium text-[#0284C7] capitalize">
+                  <div key={key} className="p-4 bg-[#F0F9FF] rounded-xl border border-[#e0f2fe]">
+                    <span className="text-xs font-semibold text-[#0284C7] uppercase tracking-wide block mb-2">
                       {key.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-[#0C4A6E] font-bold">
-                      {Array.isArray(value) ? value.join(', ') : String(value)}
+                    <span className="text-[#0C4A6E] font-bold text-base">
+                      {Array.isArray(value) ? value.join(', ') : String(value) || '-'}
                     </span>
                   </div>
                 ))}
@@ -329,18 +329,18 @@ export function AIDescriptionGenerator({
           {/* Preview Safety Info */}
           {preview.safety_info && Object.keys(preview.safety_info).length > 0 && (
             <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe]">
-              <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-4">
+              <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-6">
                 <Shield className="h-5 w-5 text-[#F59E0B]" />
                 Safety Information
               </h3>
-              <div className="space-y-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 {Object.entries(preview.safety_info).map(([key, value]) => (
-                  <div key={key} className="p-3 bg-[#fffbeb] rounded-xl">
-                    <span className="font-bold text-[#0C4A6E] capitalize block mb-1">
+                  <div key={key} className="p-4 bg-[#fffbeb] rounded-xl border border-[#fcd34d]">
+                    <span className="text-xs font-semibold text-[#b45309] uppercase tracking-wide block mb-2">
                       {key.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-[#92400e]">
-                      {Array.isArray(value) ? value.join(', ') : String(value)}
+                    <span className="text-[#92400e] font-medium">
+                      {Array.isArray(value) ? value.join(', ') : String(value) || '-'}
                     </span>
                   </div>
                 ))}

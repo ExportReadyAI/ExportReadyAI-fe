@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { catalogService } from "@/lib/api/services"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,9 +12,9 @@ import {
   Plus,
   Trash2,
   Star,
-  StarOff,
   Loader2,
   Link as LinkIcon,
+  Upload,
   X,
 } from "lucide-react"
 import type { CatalogImage } from "@/lib/api/types"
@@ -24,6 +24,8 @@ interface CatalogImagesManagerProps {
   images: CatalogImage[]
   onUpdate: () => void
 }
+
+type UploadMode = "file" | "url"
 
 export function CatalogImagesManager({
   catalogId,
@@ -35,16 +37,46 @@ export function CatalogImagesManager({
   const [settingPrimary, setSettingPrimary] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [uploadMode, setUploadMode] = useState<UploadMode>("file")
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Form state
   const [imageUrl, setImageUrl] = useState("")
   const [altText, setAltText] = useState("")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      // Create preview URL
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+    }
+  }
+
+  const clearFileSelection = () => {
+    setSelectedFile(null)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!imageUrl.trim()) {
+    if (uploadMode === "url" && !imageUrl.trim()) {
       setError("URL gambar harus diisi")
+      return
+    }
+
+    if (uploadMode === "file" && !selectedFile) {
+      setError("Pilih file gambar terlebih dahulu")
       return
     }
 
@@ -52,14 +84,25 @@ export function CatalogImagesManager({
       setAdding(true)
       setError(null)
 
-      await catalogService.addImage(catalogId, {
-        image_url: imageUrl.trim(),
-        alt_text: altText.trim() || undefined,
-        is_primary: images.length === 0,
-      })
+      if (uploadMode === "file" && selectedFile) {
+        // File upload
+        await catalogService.uploadImage(catalogId, selectedFile, {
+          alt_text: altText.trim() || undefined,
+          is_primary: images.length === 0,
+        })
+      } else {
+        // URL
+        await catalogService.addImage(catalogId, {
+          image_url: imageUrl.trim(),
+          alt_text: altText.trim() || undefined,
+          is_primary: images.length === 0,
+        })
+      }
 
+      // Reset form
       setImageUrl("")
       setAltText("")
+      clearFileSelection()
       setShowAddForm(false)
       onUpdate()
     } catch (err: any) {
@@ -101,6 +144,14 @@ export function CatalogImagesManager({
     }
   }
 
+  const closeAddForm = () => {
+    setShowAddForm(false)
+    setImageUrl("")
+    setAltText("")
+    clearFileSelection()
+    setUploadMode("file")
+  }
+
   return (
     <div className="space-y-4">
       {error && (
@@ -122,65 +173,124 @@ export function CatalogImagesManager({
         <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2">
-              <LinkIcon className="h-5 w-5 text-[#0284C7]" />
+              <ImageIcon className="h-5 w-5 text-[#0284C7]" />
               Tambah Gambar Baru
             </h3>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setShowAddForm(false)
-                setImageUrl("")
-                setAltText("")
-              }}
-            >
+            <Button variant="ghost" size="icon" onClick={closeAddForm}>
               <X className="h-4 w-4" />
             </Button>
           </div>
 
+          {/* Upload Mode Tabs */}
+          <div className="flex gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setUploadMode("file")}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
+                uploadMode === "file"
+                  ? "bg-[#0284C7] text-white shadow-[0_3px_0_0_#065985]"
+                  : "bg-[#F0F9FF] text-[#0284C7] hover:bg-[#e0f2fe]"
+              }`}
+            >
+              <Upload className="h-4 w-4" />
+              Upload File
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadMode("url")}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
+                uploadMode === "url"
+                  ? "bg-[#0284C7] text-white shadow-[0_3px_0_0_#065985]"
+                  : "bg-[#F0F9FF] text-[#0284C7] hover:bg-[#e0f2fe]"
+              }`}
+            >
+              <LinkIcon className="h-4 w-4" />
+              URL Eksternal
+            </button>
+          </div>
+
           <form onSubmit={handleAdd} className="space-y-4">
-            <div>
-              <Label className="text-[#0C4A6E] font-bold">URL Gambar *</Label>
-              <Input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="mt-2"
-                required
-              />
-            </div>
+            {uploadMode === "file" ? (
+              /* File Upload */
+              <div>
+                <Label className="text-[#0C4A6E] font-bold">File Gambar *</Label>
+                <div className="mt-2">
+                  {previewUrl ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-40 h-40 object-cover rounded-xl border-2 border-[#e0f2fe]"
+                      />
+                      <button
+                        type="button"
+                        onClick={clearFileSelection}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-[#7DD3FC] rounded-xl p-8 text-center cursor-pointer hover:bg-[#F0F9FF] transition-colors"
+                    >
+                      <Upload className="h-10 w-10 text-[#7DD3FC] mx-auto mb-2" />
+                      <p className="text-[#0284C7] font-medium">
+                        Klik untuk pilih gambar
+                      </p>
+                      <p className="text-sm text-[#7DD3FC]">
+                        JPG, PNG, atau GIF (maks. 5MB)
+                      </p>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+            ) : (
+              /* URL Input */
+              <div>
+                <Label className="text-[#0C4A6E] font-bold">URL Gambar *</Label>
+                <Input
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="mt-2"
+                />
+              </div>
+            )}
+
             <div>
               <Label className="text-[#0C4A6E] font-bold">Alt Text</Label>
               <Input
                 value={altText}
                 onChange={(e) => setAltText(e.target.value)}
-                placeholder="Deskripsi gambar..."
+                placeholder="Deskripsi gambar untuk accessibility..."
                 className="mt-2"
               />
             </div>
+
             <div className="flex gap-2">
               <Button type="submit" disabled={adding}>
                 {adding ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Menambahkan...
+                    Mengunggah...
                   </>
                 ) : (
                   <>
                     <Plus className="mr-2 h-4 w-4" />
-                    Tambah
+                    Tambah Gambar
                   </>
                 )}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowAddForm(false)
-                  setImageUrl("")
-                  setAltText("")
-                }}
-              >
+              <Button type="button" variant="outline" onClick={closeAddForm}>
                 Batal
               </Button>
             </div>
@@ -206,7 +316,7 @@ export function CatalogImagesManager({
             >
               <div className="aspect-square bg-[#F0F9FF] relative">
                 <img
-                  src={image.image_url}
+                  src={image.url}
                   alt={image.alt_text || "Catalog image"}
                   className="w-full h-full object-cover"
                   onError={(e) => {

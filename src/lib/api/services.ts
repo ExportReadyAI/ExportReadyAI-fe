@@ -66,9 +66,13 @@ import type {
   CatalogImage,
   CreateCatalogImageRequest,
   UpdateCatalogImageRequest,
-  CatalogVariant,
-  CreateCatalogVariantRequest,
-  UpdateCatalogVariantRequest,
+  VariantType,
+  VariantOption,
+  PredefinedVariantType,
+  CreateVariantTypeRequest,
+  UpdateVariantTypeRequest,
+  CreateVariantOptionRequest,
+  UpdateVariantOptionRequest,
   AIDescriptionResponse,
   GenerateAIDescriptionRequest,
 } from './types';
@@ -227,6 +231,14 @@ export const productService = {
 
   createPricing: (id: string | number, data: CreateProductPricingRequest) =>
     post<ProductPricing>(API_ENDPOINTS.products.pricing(id), data),
+
+  // AI Catalog Description - generates export description, technical specs, safety info
+  generateCatalogDescription: (id: string | number, data?: { is_food_product?: boolean }) =>
+    post<AIDescriptionResponse>(
+      API_ENDPOINTS.products.catalogDescription(id),
+      data || {},
+      { timeout: 120000 } // 2 minutes for AI processing
+    ),
 };
 
 // ==================== Country Services ====================
@@ -495,8 +507,21 @@ export const catalogService = {
   listImages: (catalogId: string | number) =>
     get<CatalogImage[]>(API_ENDPOINTS.catalogs.images(catalogId)),
 
+  // Add image via URL
   addImage: (catalogId: string | number, data: CreateCatalogImageRequest) =>
     post<CatalogImage>(API_ENDPOINTS.catalogs.images(catalogId), data),
+
+  // Add image via file upload
+  uploadImage: (catalogId: string | number, file: File, options?: { alt_text?: string; is_primary?: boolean }) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    if (options?.alt_text) formData.append('alt_text', options.alt_text);
+    if (options?.is_primary !== undefined) formData.append('is_primary', String(options.is_primary));
+    return apiClient.post<ApiResponse<CatalogImage>>(
+      API_ENDPOINTS.catalogs.images(catalogId),
+      formData
+    );
+  },
 
   updateImage: (catalogId: string | number, imageId: string | number, data: UpdateCatalogImageRequest) =>
     put<CatalogImage>(API_ENDPOINTS.catalogs.imageDetail(catalogId, imageId), data),
@@ -504,22 +529,31 @@ export const catalogService = {
   deleteImage: (catalogId: string | number, imageId: string | number) =>
     del<{ message: string }>(API_ENDPOINTS.catalogs.imageDetail(catalogId, imageId)),
 
-  // Variants
-  listVariants: (catalogId: string | number) =>
-    get<CatalogVariant[]>(API_ENDPOINTS.catalogs.variants(catalogId)),
+  // Variant Types
+  listVariantTypes: (catalogId: string | number) =>
+    get<{ data: VariantType[]; predefined_types: PredefinedVariantType[] }>(API_ENDPOINTS.catalogs.variantTypes(catalogId)),
 
-  addVariant: (catalogId: string | number, data: CreateCatalogVariantRequest) =>
-    post<CatalogVariant>(API_ENDPOINTS.catalogs.variants(catalogId), data),
+  addVariantType: (catalogId: string | number, data: CreateVariantTypeRequest) =>
+    post<VariantType>(API_ENDPOINTS.catalogs.variantTypes(catalogId), data),
 
-  updateVariant: (catalogId: string | number, variantId: string | number, data: UpdateCatalogVariantRequest) =>
-    put<CatalogVariant>(API_ENDPOINTS.catalogs.variantDetail(catalogId, variantId), data),
+  updateVariantType: (catalogId: string | number, typeId: string | number, data: UpdateVariantTypeRequest) =>
+    put<VariantType>(API_ENDPOINTS.catalogs.variantTypeDetail(catalogId, typeId), data),
 
-  deleteVariant: (catalogId: string | number, variantId: string | number) =>
-    del<{ message: string }>(API_ENDPOINTS.catalogs.variantDetail(catalogId, variantId)),
+  deleteVariantType: (catalogId: string | number, typeId: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.catalogs.variantTypeDetail(catalogId, typeId)),
 
-  // AI Description
-  generateDescription: (catalogId: string | number, data?: GenerateAIDescriptionRequest) =>
-    post<AIDescriptionResponse>(API_ENDPOINTS.catalogs.aiDescription(catalogId), data || {}),
+  // Variant Options
+  listVariantOptions: (catalogId: string | number, typeId: string | number) =>
+    get<VariantOption[]>(API_ENDPOINTS.catalogs.variantOptions(catalogId, typeId)),
+
+  addVariantOption: (catalogId: string | number, typeId: string | number, data: CreateVariantOptionRequest) =>
+    post<VariantOption>(API_ENDPOINTS.catalogs.variantOptions(catalogId, typeId), data),
+
+  updateVariantOption: (catalogId: string | number, typeId: string | number, optionId: string | number, data: UpdateVariantOptionRequest) =>
+    put<VariantOption>(API_ENDPOINTS.catalogs.variantOptionDetail(catalogId, typeId, optionId), data),
+
+  deleteVariantOption: (catalogId: string | number, typeId: string | number, optionId: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.catalogs.variantOptionDetail(catalogId, typeId, optionId)),
 
   // Public endpoints
   listPublic: () =>

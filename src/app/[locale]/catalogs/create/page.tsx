@@ -21,28 +21,42 @@ import {
   Tag,
   Plus,
   X,
+  Sparkles,
+  FileText,
+  Shield,
+  Settings,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react"
-import type { Product, CreateCatalogRequest } from "@/lib/api/types"
+import type { Product, CreateCatalogRequest, AIDescriptionResponse, CatalogTechnicalSpecs, CatalogSafetyInfo } from "@/lib/api/types"
 
 export default function CreateCatalogPage() {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
 
-  // Form state
+  // Form state - Basic
   const [productId, setProductId] = useState<string>("")
   const [displayName, setDisplayName] = useState("")
   const [basePriceExw, setBasePriceExw] = useState("")
-  const [marketingDescription, setMarketingDescription] = useState("")
   const [minOrderQuantity, setMinOrderQuantity] = useState("1")
   const [unitType, setUnitType] = useState("pcs")
   const [leadTimeDays, setLeadTimeDays] = useState("14")
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState("")
+
+  // Form state - AI Description fields (can be filled manually or via AI)
+  const [exportDescription, setExportDescription] = useState("")
+  const [technicalSpecs, setTechnicalSpecs] = useState<CatalogTechnicalSpecs>({})
+  const [safetyInfo, setSafetyInfo] = useState<CatalogSafetyInfo>({})
+  const [isFoodProduct, setIsFoodProduct] = useState(false)
+
+  // AI state
+  const [generatingAI, setGeneratingAI] = useState(false)
+  const [aiGenerated, setAiGenerated] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -101,6 +115,77 @@ export default function CreateCatalogPage() {
     setTags(tags.filter(tag => tag !== tagToRemove))
   }
 
+  const handleProductSelect = (id: string) => {
+    setProductId(id)
+    // Reset AI generated flag when product changes
+    setAiGenerated(false)
+    if (id) {
+      const selectedProduct = products.find(p => p.id === parseInt(id))
+      if (selectedProduct && !displayName) {
+        setDisplayName(selectedProduct.name_local)
+      }
+    }
+  }
+
+  const handleGenerateAI = async () => {
+    if (!productId) {
+      setError("Pilih produk terlebih dahulu untuk generate AI")
+      return
+    }
+
+    try {
+      setGeneratingAI(true)
+      setError(null)
+
+      const response = await productService.generateCatalogDescription(
+        parseInt(productId),
+        { is_food_product: isFoodProduct }
+      )
+
+      console.log("AI Response:", response) // Debug log
+
+      let aiData: AIDescriptionResponse | null = null
+
+      if (response && typeof response === 'object') {
+        // Handle ApiResponse format: { success: true, data: { export_description, ... } }
+        if ('success' in response && (response as any).success && (response as any).data) {
+          aiData = (response as any).data
+        }
+        // Handle direct response format: { export_description, ... }
+        else if ('export_description' in response) {
+          aiData = response as unknown as AIDescriptionResponse
+        }
+        // Handle nested data format
+        else if ('data' in response && (response as any).data?.export_description) {
+          aiData = (response as any).data
+        }
+      }
+
+      console.log("Parsed AI Data:", aiData) // Debug log
+
+      if (aiData) {
+        // Pre-fill fields with AI results
+        if (aiData.export_description) {
+          setExportDescription(aiData.export_description)
+        }
+        if (aiData.technical_specs) {
+          setTechnicalSpecs(aiData.technical_specs)
+        }
+        if (aiData.safety_info) {
+          setSafetyInfo(aiData.safety_info)
+        }
+        setAiGenerated(true)
+      } else {
+        setError("Format response AI tidak valid. Cek console untuk detail.")
+      }
+    } catch (err: any) {
+      console.error("AI Error:", err) // Debug log
+      setError(err.response?.data?.message || err.response?.data?.detail || "Gagal generate AI description")
+    } finally {
+      setGeneratingAI(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -123,18 +208,25 @@ export default function CreateCatalogPage() {
       setSaving(true)
       setError(null)
 
-      const data: CreateCatalogRequest = {
+      const data: CreateCatalogRequest & {
+        export_description?: string
+        technical_specs?: CatalogTechnicalSpecs
+        safety_info?: CatalogSafetyInfo
+      } = {
         product_id: parseInt(productId),
         display_name: displayName.trim(),
         base_price_exw: parseFloat(basePriceExw),
-        marketing_description: marketingDescription.trim() || undefined,
         min_order_quantity: parseInt(minOrderQuantity) || 1,
         unit_type: unitType,
         lead_time_days: parseInt(leadTimeDays) || 14,
         tags: tags.length > 0 ? tags : undefined,
+        // Include AI description fields if filled
+        export_description: exportDescription.trim() || undefined,
+        technical_specs: Object.keys(technicalSpecs).length > 0 ? technicalSpecs : undefined,
+        safety_info: Object.keys(safetyInfo).length > 0 ? safetyInfo : undefined,
       }
 
-      const response = await catalogService.create(data)
+      const response = await catalogService.create(data as CreateCatalogRequest)
 
       let catalogId: number | null = null
 
@@ -158,15 +250,39 @@ export default function CreateCatalogPage() {
     }
   }
 
-  // Handle product selection - auto fill display name
-  const handleProductSelect = (id: string) => {
-    setProductId(id)
-    if (id) {
-      const selectedProduct = products.find(p => p.id === parseInt(id))
-      if (selectedProduct && !displayName) {
-        setDisplayName(selectedProduct.name_local)
+  // Helper to format technical specs for display
+  const formatTechnicalSpecs = (specs: CatalogTechnicalSpecs): string => {
+    if (!specs || Object.keys(specs).length === 0) return ""
+    const lines: string[] = []
+    if (specs.product_name) lines.push(`Product: ${specs.product_name}`)
+    if (specs.material) lines.push(`Material: ${specs.material}`)
+    if (specs.dimensions) lines.push(`Dimensions: ${specs.dimensions}`)
+    if (specs.weight_net) lines.push(`Net Weight: ${specs.weight_net}`)
+    if (specs.weight_gross) lines.push(`Gross Weight: ${specs.weight_gross}`)
+    if (specs.certifications?.length) lines.push(`Certifications: ${specs.certifications.join(", ")}`)
+    // Add any other fields
+    Object.entries(specs).forEach(([key, value]) => {
+      if (!['product_name', 'material', 'dimensions', 'weight_net', 'weight_gross', 'certifications'].includes(key) && value) {
+        lines.push(`${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
       }
-    }
+    })
+    return lines.join("\n")
+  }
+
+  // Helper to format safety info for display
+  const formatSafetyInfo = (info: CatalogSafetyInfo): string => {
+    if (!info || Object.keys(info).length === 0) return ""
+    const lines: string[] = []
+    if (info.material_safety) lines.push(`Material Safety: ${info.material_safety}`)
+    if (info.warnings?.length) lines.push(`Warnings: ${info.warnings.join(", ")}`)
+    if (info.storage) lines.push(`Storage: ${info.storage}`)
+    // Add any other fields
+    Object.entries(info).forEach(([key, value]) => {
+      if (!['material_safety', 'warnings', 'storage'].includes(key) && value) {
+        lines.push(`${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
+      }
+    })
+    return lines.join("\n")
   }
 
   if (!mounted || loadingProducts) {
@@ -215,34 +331,90 @@ export default function CreateCatalogPage() {
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* Product Selection */}
+            {/* Product Selection with AI Button */}
             <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe] mb-6">
               <h2 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-4">
                 <Package className="h-5 w-5 text-[#8B5CF6]" />
                 Pilih Produk
               </h2>
 
-              <div>
-                <Label htmlFor="product" className="text-[#0C4A6E] font-bold">
-                  Produk *
-                </Label>
-                <Select
-                  id="product"
-                  value={productId}
-                  onChange={(e) => handleProductSelect(e.target.value)}
-                  className="mt-2"
-                  required
-                >
-                  <option value="">Pilih produk...</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id.toString()}>
-                      {product.name_local}
-                    </option>
-                  ))}
-                </Select>
-                <p className="text-xs text-[#7DD3FC] mt-1">
-                  Produk yang akan dijadikan katalog
-                </p>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="product" className="text-[#0C4A6E] font-bold">
+                    Produk *
+                  </Label>
+                  <Select
+                    id="product"
+                    value={productId}
+                    onChange={(e) => handleProductSelect(e.target.value)}
+                    className="mt-2"
+                    required
+                  >
+                    <option value="">Pilih produk...</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id.toString()}>
+                        {product.name_local}
+                      </option>
+                    ))}
+                  </Select>
+                  <p className="text-xs text-[#7DD3FC] mt-1">
+                    Produk yang akan dijadikan katalog
+                  </p>
+                </div>
+
+                {/* AI Recommendation Button */}
+                {productId && (
+                  <div className="bg-gradient-to-r from-[#f5f3ff] to-[#ede9fe] rounded-xl p-4 border border-[#ddd6fe]">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B5CF6]">
+                          <Sparkles className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#0C4A6E]">AI Recommendation</p>
+                          <p className="text-xs text-[#7c3aed]">
+                            Generate deskripsi, spesifikasi teknis, dan info keamanan otomatis
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={isFoodProduct}
+                            onChange={(e) => setIsFoodProduct(e.target.checked)}
+                            className="rounded border-gray-300"
+                          />
+                          <span className="text-[#0C4A6E]">Food Product</span>
+                        </label>
+                        <Button
+                          type="button"
+                          onClick={handleGenerateAI}
+                          disabled={generatingAI}
+                          className="bg-[#8B5CF6] hover:bg-[#7c3aed] shadow-[0_4px_0_0_#6d28d9]"
+                        >
+                          {generatingAI ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              Get AI Recommendations
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    {aiGenerated && (
+                      <div className="mt-3 flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        AI telah mengisi field deskripsi. Anda dapat mengedit sebelum menyimpan.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -253,37 +425,18 @@ export default function CreateCatalogPage() {
                 Informasi Katalog
               </h2>
 
-              <div className="grid gap-5">
-                <div>
-                  <Label htmlFor="displayName" className="text-[#0C4A6E] font-bold">
-                    Nama Katalog *
-                  </Label>
-                  <Input
-                    id="displayName"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Nama produk untuk katalog"
-                    className="mt-2"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="marketingDescription" className="text-[#0C4A6E] font-bold">
-                    Deskripsi Marketing
-                  </Label>
-                  <Textarea
-                    id="marketingDescription"
-                    value={marketingDescription}
-                    onChange={(e) => setMarketingDescription(e.target.value)}
-                    placeholder="Deskripsi singkat untuk marketing..."
-                    className="mt-2"
-                    rows={3}
-                  />
-                  <p className="text-xs text-[#7DD3FC] mt-1">
-                    Deskripsi ini akan ditampilkan di katalog publik
-                  </p>
-                </div>
+              <div>
+                <Label htmlFor="displayName" className="text-[#0C4A6E] font-bold">
+                  Nama Katalog *
+                </Label>
+                <Input
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Nama produk untuk katalog"
+                  className="mt-2"
+                  required
+                />
               </div>
             </div>
 
@@ -320,29 +473,23 @@ export default function CreateCatalogPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="moq" className="text-[#0C4A6E] font-bold">
-                      MOQ
-                    </Label>
+                <div>
+                  <Label htmlFor="moq" className="text-[#0C4A6E] font-bold">
+                    MOQ (Minimum Order Quantity)
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
                     <Input
                       id="moq"
                       type="number"
                       min="1"
                       value={minOrderQuantity}
                       onChange={(e) => setMinOrderQuantity(e.target.value)}
-                      className="mt-2"
+                      placeholder="Jumlah minimum"
                     />
-                  </div>
-                  <div>
-                    <Label htmlFor="unit" className="text-[#0C4A6E] font-bold">
-                      Satuan
-                    </Label>
                     <Select
                       id="unit"
                       value={unitType}
                       onChange={(e) => setUnitType(e.target.value)}
-                      className="mt-2"
                     >
                       <option value="pcs">pcs</option>
                       <option value="kg">kg</option>
@@ -352,6 +499,9 @@ export default function CreateCatalogPage() {
                       <option value="container">container</option>
                     </Select>
                   </div>
+                  <p className="text-xs text-[#7DD3FC] mt-1">
+                    Jumlah pesanan minimum yang harus dipenuhi buyer
+                  </p>
                 </div>
               </div>
             </div>
@@ -366,18 +516,21 @@ export default function CreateCatalogPage() {
               <div className="grid gap-5">
                 <div className="max-w-xs">
                   <Label htmlFor="leadTime" className="text-[#0C4A6E] font-bold">
-                    Lead Time (hari)
+                    Lead Time (Waktu Produksi)
                   </Label>
-                  <Input
-                    id="leadTime"
-                    type="number"
-                    min="1"
-                    value={leadTimeDays}
-                    onChange={(e) => setLeadTimeDays(e.target.value)}
-                    className="mt-2"
-                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    <Input
+                      id="leadTime"
+                      type="number"
+                      min="1"
+                      value={leadTimeDays}
+                      onChange={(e) => setLeadTimeDays(e.target.value)}
+                      className="w-24"
+                    />
+                    <span className="text-[#0C4A6E] font-medium">hari</span>
+                  </div>
                   <p className="text-xs text-[#7DD3FC] mt-1">
-                    Waktu produksi dalam hari kerja
+                    Estimasi waktu yang dibutuhkan untuk memproduksi pesanan setelah order dikonfirmasi
                   </p>
                 </div>
 
@@ -421,6 +574,138 @@ export default function CreateCatalogPage() {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Export Description - Always Visible */}
+            <div className="bg-gradient-to-r from-[#f5f3ff] to-[#ede9fe] rounded-3xl border-2 border-[#ddd6fe] p-6 mb-6">
+              <h2 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-2">
+                <FileText className="h-5 w-5 text-[#8B5CF6]" />
+                Export Description (B2B English)
+              </h2>
+              <p className="text-sm text-[#7c3aed] mb-4">
+                Deskripsi produk untuk buyer internasional. Isi manual atau gunakan AI di atas.
+              </p>
+              <Textarea
+                value={exportDescription}
+                onChange={(e) => setExportDescription(e.target.value)}
+                placeholder="English B2B marketing description for international buyers..."
+                className="bg-white"
+                rows={5}
+              />
+            </div>
+
+            {/* Technical Specifications - Always Visible */}
+            <div className="bg-gradient-to-r from-[#ecfdf5] to-[#d1fae5] rounded-3xl border-2 border-[#a7f3d0] p-6 mb-6">
+              <h2 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-2">
+                <Settings className="h-5 w-5 text-[#22C55E]" />
+                Technical Specifications
+              </h2>
+              <p className="text-sm text-[#059669] mb-4">
+                Spesifikasi teknis produk. Isi manual atau gunakan AI.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label className="text-[#0C4A6E] font-bold text-sm">Product Name</Label>
+                  <Input
+                    value={technicalSpecs.product_name || ""}
+                    onChange={(e) => setTechnicalSpecs({ ...technicalSpecs, product_name: e.target.value })}
+                    placeholder="Product name..."
+                    className="mt-1 bg-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[#0C4A6E] font-bold text-sm">Material</Label>
+                  <Input
+                    value={technicalSpecs.material || ""}
+                    onChange={(e) => setTechnicalSpecs({ ...technicalSpecs, material: e.target.value })}
+                    placeholder="Material composition..."
+                    className="mt-1 bg-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[#0C4A6E] font-bold text-sm">Dimensions</Label>
+                  <Input
+                    value={technicalSpecs.dimensions || ""}
+                    onChange={(e) => setTechnicalSpecs({ ...technicalSpecs, dimensions: e.target.value })}
+                    placeholder="e.g., 30 x 20 x 10 cm"
+                    className="mt-1 bg-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[#0C4A6E] font-bold text-sm">Net Weight</Label>
+                  <Input
+                    value={technicalSpecs.weight_net || ""}
+                    onChange={(e) => setTechnicalSpecs({ ...technicalSpecs, weight_net: e.target.value })}
+                    placeholder="e.g., 500g"
+                    className="mt-1 bg-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[#0C4A6E] font-bold text-sm">Gross Weight</Label>
+                  <Input
+                    value={technicalSpecs.weight_gross || ""}
+                    onChange={(e) => setTechnicalSpecs({ ...technicalSpecs, weight_gross: e.target.value })}
+                    placeholder="e.g., 600g (with packaging)"
+                    className="mt-1 bg-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[#0C4A6E] font-bold text-sm">Certifications</Label>
+                  <Input
+                    value={technicalSpecs.certifications?.join(", ") || ""}
+                    onChange={(e) => setTechnicalSpecs({
+                      ...technicalSpecs,
+                      certifications: e.target.value ? e.target.value.split(",").map(s => s.trim()) : []
+                    })}
+                    placeholder="e.g., ISO 9001, HACCP (comma separated)"
+                    className="mt-1 bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Safety Information - Always Visible */}
+            <div className="bg-gradient-to-r from-[#fef3c7] to-[#fde68a] rounded-3xl border-2 border-[#fcd34d] p-6 mb-6">
+              <h2 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-2">
+                <Shield className="h-5 w-5 text-[#F59E0B]" />
+                Safety Information
+              </h2>
+              <p className="text-sm text-[#b45309] mb-4">
+                Informasi keamanan produk. Isi manual atau gunakan AI.
+              </p>
+              <div className="grid gap-4">
+                <div>
+                  <Label className="text-[#0C4A6E] font-bold text-sm">Material Safety</Label>
+                  <Textarea
+                    value={safetyInfo.material_safety || ""}
+                    onChange={(e) => setSafetyInfo({ ...safetyInfo, material_safety: e.target.value })}
+                    placeholder="Material safety information..."
+                    className="mt-1 bg-white"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label className="text-[#0C4A6E] font-bold text-sm">Warnings</Label>
+                  <Input
+                    value={safetyInfo.warnings?.join(", ") || ""}
+                    onChange={(e) => setSafetyInfo({
+                      ...safetyInfo,
+                      warnings: e.target.value ? e.target.value.split(",").map(s => s.trim()) : []
+                    })}
+                    placeholder="e.g., Keep away from fire, Not suitable for children under 3 (comma separated)"
+                    className="mt-1 bg-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[#0C4A6E] font-bold text-sm">Storage</Label>
+                  <Input
+                    value={safetyInfo.storage || ""}
+                    onChange={(e) => setSafetyInfo({ ...safetyInfo, storage: e.target.value })}
+                    placeholder="Storage instructions..."
+                    className="mt-1 bg-white"
+                  />
                 </div>
               </div>
             </div>
