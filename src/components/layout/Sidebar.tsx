@@ -101,6 +101,13 @@ const menuItems = [
     color: "#6366F1",
   },
   {
+    title: "Catalogs",
+    href: "/forwarders/catalogs",
+    icon: BookMarked,
+    roles: ["Forwarder"],
+    color: "#8B5CF6",
+  },
+  {
     title: "My Profile",
     href: "/buyers/my-profile",
     icon: UserCircle,
@@ -111,7 +118,7 @@ const menuItems = [
     title: "Educational Materials",
     href: "/educational",
     icon: BookOpen,
-    roles: ["Admin", "UMKM", "Buyer", "Forwarder"],
+    roles: ["Admin", "UMKM"],
     color: "#0284C7",
   },
   {

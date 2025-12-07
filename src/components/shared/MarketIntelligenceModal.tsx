@@ -27,6 +27,11 @@ import {
   ArrowRight,
   MapPin,
   RefreshCw,
+  Truck,
+  Star,
+  Mail,
+  Phone,
+  ExternalLink,
 } from "lucide-react"
 import type { MarketIntelligence, RecommendedCountry, CountryToAvoid } from "@/lib/api/types"
 
@@ -151,7 +156,7 @@ export function MarketIntelligenceModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="!max-w-[95vw] sm:!max-w-[95vw] !w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EC4899] shadow-[0_3px_0_0_#be185d]">
@@ -214,53 +219,135 @@ export function MarketIntelligenceModal({
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
                   Negara yang Direkomendasikan
                 </h4>
-                <div className="grid gap-4">
+                <div className="grid gap-6">
                   {data.recommended_countries?.map((country, index) => (
-                    <div
-                      key={index}
-                      className="bg-white rounded-xl border-2 border-[#e0f2fe] p-4 shadow-sm"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F0F9FF] text-2xl">
-                            <MapPin className="h-5 w-5 text-[#0284C7]" />
+                    <div key={index} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      {/* Country Info Card */}
+                      <div className="lg:col-span-2 bg-white rounded-xl border-2 border-[#e0f2fe] p-4 shadow-sm">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F0F9FF] text-2xl">
+                              <MapPin className="h-5 w-5 text-[#0284C7]" />
+                            </div>
+                            <div>
+                              <h5 className="font-bold text-[#0C4A6E]">{country.country}</h5>
+                              <Badge variant="outline" className="text-xs">
+                                {country.country_code}
+                              </Badge>
+                            </div>
                           </div>
-                          <div>
-                            <h5 className="font-bold text-[#0C4A6E]">{country.country}</h5>
-                            <Badge variant="outline" className="text-xs">
-                              {country.country_code}
-                            </Badge>
+                          <div className={`flex items-center gap-1 px-3 py-1 rounded-full border ${getScoreColor(country.score)}`}>
+                            {getScoreIcon(country.score)}
+                            <span className="font-bold">{country.score}</span>
                           </div>
                         </div>
-                        <div className={`flex items-center gap-1 px-3 py-1 rounded-full border ${getScoreColor(country.score)}`}>
-                          {getScoreIcon(country.score)}
-                          <span className="font-bold">{country.score}</span>
+                        <p className="text-sm text-[#0284C7] mb-3">
+                          {country.reason.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4 text-[#7DD3FC]" />
+                            <span className="text-[#0C4A6E]">Ukuran Pasar: <strong>{country.market_size}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Target className="h-4 w-4 text-[#7DD3FC]" />
+                            <span className="text-[#0C4A6E]">Kompetisi: <strong>{country.competition_level}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-[#7DD3FC]" />
+                            <span className="text-[#0C4A6E]">Harga: <strong>{country.suggested_price_range}</strong></span>
+                          </div>
+                        </div>
+                        {country.entry_strategy && (
+                          <div className="mt-3 p-3 bg-[#F0F9FF] rounded-lg">
+                            <p className="text-sm text-[#0284C7]">
+                              <strong>Strategi Masuk:</strong> {country.entry_strategy.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Forwarder Recommendations Section */}
+                      <div className="lg:col-span-1">
+                        <div className="bg-gradient-to-br from-[#6366F1] to-[#4f46e5] rounded-xl border-2 border-[#4338ca] p-4 shadow-[0_4px_0_0_#3730a3] h-full">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Truck className="h-5 w-5 text-white" />
+                            <h6 className="font-bold text-sm text-white">Forwarder Potensial</h6>
+                          </div>
+                          
+                          {country.forwarders && country.forwarders.length > 0 ? (
+                            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                              {country.forwarders.map((forwarder) => (
+                                <div
+                                  key={forwarder.id}
+                                  className="bg-white rounded-lg border border-white/20 p-3 hover:shadow-md transition-shadow"
+                                >
+                                  <div className="mb-2">
+                                    <h6 className="font-bold text-sm text-[#0C4A6E] mb-1 line-clamp-1">{forwarder.company_name}</h6>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="flex items-center gap-1">
+                                        <Star className="h-3 w-3 text-[#F59E0B] fill-[#F59E0B]" />
+                                        <span className="text-xs font-bold text-[#0C4A6E]">
+                                          {Number(forwarder.average_rating).toFixed(1)}
+                                        </span>
+                                      </div>
+                                      <span className="text-xs text-[#7DD3FC]">
+                                        ({forwarder.total_reviews} review{forwarder.total_reviews !== 1 ? 's' : ''})
+                                      </span>
+                                    </div>
+                                    {forwarder.service_types && forwarder.service_types.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mb-2">
+                                        {forwarder.service_types.slice(0, 2).map((service, idx) => (
+                                          <Badge key={idx} variant="secondary" className="text-xs">
+                                            {service}
+                                          </Badge>
+                                        ))}
+                                        {forwarder.service_types.length > 2 && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            +{forwarder.service_types.length - 2}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {forwarder.contact_info && (
+                                    <div className="space-y-1 text-xs text-[#0284C7] mb-2">
+                                      {forwarder.contact_info.phone && (
+                                        <div className="flex items-center gap-1">
+                                          <Phone className="h-3 w-3" />
+                                          <span className="truncate">{forwarder.contact_info.phone}</span>
+                                        </div>
+                                      )}
+                                      {forwarder.contact_info.email && (
+                                        <div className="flex items-center gap-1">
+                                          <Mail className="h-3 w-3" />
+                                          <span className="truncate text-[10px]">{forwarder.contact_info.email}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-xs border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white h-7"
+                                    onClick={() => window.open(`/forwarders/${forwarder.id}`, '_blank')}
+                                  >
+                                    <ExternalLink className="mr-1 h-3 w-3" />
+                                    Lihat Profil
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="bg-white/10 rounded-lg border border-white/20 p-4 text-center">
+                              <Truck className="h-8 w-8 text-white/50 mx-auto mb-2" />
+                              <p className="text-xs text-white/80 font-medium">
+                                Belum ada forwarder yang direkomendasikan untuk rute ini
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <p className="text-sm text-[#0284C7] mb-3">
-                        {country.reason.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <BarChart3 className="h-4 w-4 text-[#7DD3FC]" />
-                          <span className="text-[#0C4A6E]">Ukuran Pasar: <strong>{country.market_size}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Target className="h-4 w-4 text-[#7DD3FC]" />
-                          <span className="text-[#0C4A6E]">Kompetisi: <strong>{country.competition_level}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-[#7DD3FC]" />
-                          <span className="text-[#0C4A6E]">Harga: <strong>{country.suggested_price_range}</strong></span>
-                        </div>
-                      </div>
-                      {country.entry_strategy && (
-                        <div className="mt-3 p-3 bg-[#F0F9FF] rounded-lg">
-                          <p className="text-sm text-[#0284C7]">
-                            <strong>Strategi Masuk:</strong> {country.entry_strategy.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
-                          </p>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>

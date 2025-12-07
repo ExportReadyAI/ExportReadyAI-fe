@@ -496,6 +496,21 @@ export interface MatchedUMKM {
   catalog: MatchedUMKMCatalog;
 }
 
+// Matched Catalog (for UMKM viewing their catalogs that match buyer requests)
+export interface MatchedCatalog {
+  catalog_id: number;
+  display_name: string;
+  match_score: number;
+  match_reasons: string[];
+  primary_image?: string;
+  base_price_exw: number;
+  min_order_quantity: number;
+  unit_type: string;
+  lead_time_days: number;
+  has_ai_description: boolean;
+  is_published: boolean;
+}
+
 // ==================== Module 6: Forwarder Types ====================
 
 export interface ForwarderContactInfo {
@@ -664,6 +679,16 @@ export interface UpdateEducationalArticleRequest extends Partial<Omit<CreateEduc
 // ==================== AI Marketing Features Types ====================
 
 // Market Intelligence Types (AI 2)
+export interface ForwarderRecommendation {
+  id: number;
+  company_name: string;
+  contact_info: ForwarderContactInfo;
+  specialization_routes: string[];
+  service_types: string[];
+  average_rating: number;
+  total_reviews: number;
+}
+
 export interface RecommendedCountry {
   country: string;
   country_code: string;
@@ -673,6 +698,7 @@ export interface RecommendedCountry {
   competition_level: string;
   suggested_price_range: string;
   entry_strategy: string;
+  forwarders?: ForwarderRecommendation[];
 }
 
 export interface CountryToAvoid {
@@ -804,6 +830,8 @@ export interface Catalog {
   product_name?: string;
   display_name: string;
   base_price_exw: number;
+  base_price_fob?: number;
+  base_price_cif?: number;
   marketing_description?: string;
   export_description?: string;
   technical_specs?: CatalogTechnicalSpecs;
@@ -811,6 +839,7 @@ export interface Catalog {
   min_order_quantity: number;
   unit_type: string;
   lead_time_days: number;
+  available_stock?: number;
   tags?: string[];
   is_published: boolean;
   images: CatalogImage[];
@@ -819,8 +848,17 @@ export interface Catalog {
   primary_image?: string;
   variant_count?: number;
   has_ai_description?: boolean; // Indicates if catalog has AI-generated description
+  published_at?: string;
   created_at: string;
   updated_at: string;
+}
+
+// Forwarder-specific catalog with seller information
+export interface ForwarderCatalog extends Catalog {
+  seller_name: string;
+  seller_address?: string;
+  seller_email: string;
+  seller_full_name?: string;
 }
 
 export interface CreateCatalogRequest {

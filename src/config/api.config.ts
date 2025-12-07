@@ -91,6 +91,7 @@ export const API_ENDPOINTS = {
     updateStatus: (id: string | number) => `/buyer-requests/${id}/status/`,
     delete: (id: string | number) => `/buyer-requests/${id}/`,
     matchedUMKM: (id: string | number) => `/buyer-requests/${id}/matched-umkm/`,
+    matchedCatalogs: (id: string | number) => `/buyer-requests/${id}/matched-catalogs/`,
   },
   
   // Forwarder endpoints (Module 6B)
@@ -142,6 +143,8 @@ export const API_ENDPOINTS = {
     detail: (id: string | number) => `/catalogs/${id}/`,
     update: (id: string | number) => `/catalogs/${id}/`,
     delete: (id: string | number) => `/catalogs/${id}/`,
+    // Forwarder-specific
+    forwarderList: '/catalogs/forwarder/',
     // Images
     images: (catalogId: string | number) => `/catalogs/${catalogId}/images/`,
     imageDetail: (catalogId: string | number, imageId: string | number) => `/catalogs/${catalogId}/images/${imageId}/`,

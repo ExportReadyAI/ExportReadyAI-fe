@@ -23,6 +23,7 @@ interface CatalogImagesManagerProps {
   catalogId: number
   images: CatalogImage[]
   onUpdate: () => void
+  readOnly?: boolean
 }
 
 type UploadMode = "file" | "url"
@@ -31,6 +32,7 @@ export function CatalogImagesManager({
   catalogId,
   images,
   onUpdate,
+  readOnly = false,
 }: CatalogImagesManagerProps) {
   const [adding, setAdding] = useState(false)
   const [deleting, setDeleting] = useState<number | null>(null)
@@ -160,8 +162,8 @@ export function CatalogImagesManager({
         </Alert>
       )}
 
-      {/* Add Image Button/Form */}
-      {!showAddForm ? (
+      {/* Add Image Button/Form - Hidden for read-only users */}
+      {!readOnly && !showAddForm && (
         <Button
           onClick={() => setShowAddForm(true)}
           className="bg-[#0284C7] hover:bg-[#0369a1] shadow-[0_4px_0_0_#065985]"
@@ -169,7 +171,9 @@ export function CatalogImagesManager({
           <Plus className="mr-2 h-4 w-4" />
           Tambah Gambar
         </Button>
-      ) : (
+      )}
+      
+      {!readOnly && showAddForm && (
         <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2">
@@ -330,39 +334,42 @@ export function CatalogImagesManager({
                   </Badge>
                 )}
               </div>
-              <div className="p-3 flex gap-2">
-                {!image.is_primary && (
+              {/* Action buttons - Hidden for read-only users */}
+              {!readOnly && (
+                <div className="p-3 flex gap-2">
+                  {!image.is_primary && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleSetPrimary(image.id)}
+                      disabled={settingPrimary === image.id}
+                    >
+                      {settingPrimary === image.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Star className="h-4 w-4 mr-1" />
+                          Utama
+                        </>
+                      )}
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1"
-                    onClick={() => handleSetPrimary(image.id)}
-                    disabled={settingPrimary === image.id}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => handleDelete(image.id)}
+                    disabled={deleting === image.id}
                   >
-                    {settingPrimary === image.id ? (
+                    {deleting === image.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <>
-                        <Star className="h-4 w-4 mr-1" />
-                        Utama
-                      </>
+                      <Trash2 className="h-4 w-4" />
                     )}
                   </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                  onClick={() => handleDelete(image.id)}
-                  disabled={deleting === image.id}
-                >
-                  {deleting === image.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
