@@ -6,128 +6,159 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Save, RotateCcw, AlertTriangle, Plus, Trash2 } from "lucide-react"
+import { Loader2, Save, RotateCcw, Plus, Trash2, Package } from "lucide-react"
 import { productService } from "@/lib/api/services"
 import type { ComplianceIssue, Product } from "@/lib/api/types"
 
 interface InlineComplianceEditorProps {
   productId: number
-  complianceIssues: ComplianceIssue[]
+  complianceIssues: ComplianceIssue[] // Kept for type compatibility, not used in logic
   currentProduct: Product | null
   onSaveComplete: () => Promise<void>
 }
 
-interface EditableField {
-  path: string
+interface ProductField {
+  key: string
   label: string
   value: string | number
-  isNew: boolean // Apakah field baru ditambahkan user
   isChanged: boolean
   originalValue: string | number
+  type: 'text' | 'textarea' | 'number'
+}
+
+interface QualitySpecField {
+  key: string
+  label: string
+  value: string | number
+  isChanged: boolean
+  originalValue: string | number
+  isNew: boolean
+  keyEditable: boolean
 }
 
 /**
- * InlineComplianceEditor Component
+ * InlineComplianceEditor Component - FULL PRODUCT EDITOR
  * 
- * Inline table editor untuk memperbaiki compliance issues dan menambah atribut baru.
- * Format: Label | Value dengan value yang bisa diedit langsung.
+ * Menampilkan SELURUH atribut produk untuk diedit.
+ * User bisa mengubah atribut sesuai rekomendasi AI.
  * 
  * Features:
- * - Edit existing fields dari compliance issues
- * - Add new attributes ke quality_specs
- * - Show original values jika sudah ada di product
- * - One-click save untuk semua perubahan
+ * - Edit semua top-level attributes
+ * - Edit semua quality_specs attributes (nama & value)
+ * - Add new quality_specs attributes
+ * - Compliance issues sebagai reference
  */
 export function InlineComplianceEditor({
   productId,
-  complianceIssues,
+  complianceIssues: _, // eslint-disable-line @typescript-eslint/no-unused-vars
   currentProduct,
   onSaveComplete,
 }: InlineComplianceEditorProps) {
-  const [fields, setFields] = useState<EditableField[]>([])
-  const [newFields, setNewFields] = useState<EditableField[]>([])
+  const [productFields, setProductFields] = useState<ProductField[]>([])
+  const [qualitySpecFields, setQualitySpecFields] = useState<QualitySpecField[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  // Initialize fields dari compliance issues
+  // Initialize fields dari product data
   useEffect(() => {
-    if (complianceIssues.length > 0 && currentProduct) {
-      const initialFields: EditableField[] = complianceIssues
-        .filter(issue => issue.your_value && issue.required_value)
-        .map(issue => {
-          const path = getFieldPathFromIssue(issue)
-          const currentValue = getCurrentValueFromProduct(path, currentProduct)
-          
-          return {
-            path,
-            label: issue.type,
-            value: currentValue || issue.your_value || "",
-            isNew: false,
-            isChanged: false,
-            originalValue: currentValue || issue.your_value || "",
-          }
-        })
-      setFields(initialFields)
-    }
-  }, [complianceIssues, currentProduct])
+    if (currentProduct) {
+      // Top-level product fields
+      const topLevelFields: ProductField[] = [
+        { key: 'name_local', label: 'Product Name (Local)', value: currentProduct.name_local || '', originalValue: currentProduct.name_local || '', isChanged: false, type: 'text' },
+        { key: 'description_local', label: 'Description (Local)', value: currentProduct.description_local || '', originalValue: currentProduct.description_local || '', isChanged: false, type: 'textarea' },
+        { key: 'material_composition', label: 'Material Composition', value: currentProduct.material_composition || '', originalValue: currentProduct.material_composition || '', isChanged: false, type: 'textarea' },
+        { key: 'production_technique', label: 'Production Technique', value: currentProduct.production_technique || '', originalValue: currentProduct.production_technique || '', isChanged: false, type: 'text' },
+        { key: 'finishing_type', label: 'Finishing Type', value: currentProduct.finishing_type || '', originalValue: currentProduct.finishing_type || '', isChanged: false, type: 'text' },
+        { key: 'durability_claim', label: 'Durability Claim', value: currentProduct.durability_claim || '', originalValue: currentProduct.durability_claim || '', isChanged: false, type: 'text' },
+        { key: 'packaging_type', label: 'Packaging Type', value: currentProduct.packaging_type || '', originalValue: currentProduct.packaging_type || '', isChanged: false, type: 'text' },
+        { key: 'weight_net', label: 'Net Weight', value: currentProduct.weight_net || '', originalValue: currentProduct.weight_net || '', isChanged: false, type: 'text' },
+        { key: 'weight_gross', label: 'Gross Weight', value: currentProduct.weight_gross || '', originalValue: currentProduct.weight_gross || '', isChanged: false, type: 'text' },
+      ]
+      setProductFields(topLevelFields)
 
-  const handleFieldChange = (index: number, newValue: string | number, isNewField: boolean = false) => {
-    if (isNewField) {
-      setNewFields(prev => {
-        const updated = [...prev]
-        updated[index].value = newValue
-        updated[index].isChanged = newValue !== updated[index].originalValue
-        return updated
-      })
-    } else {
-      setFields(prev => {
-        const updated = [...prev]
-        updated[index].value = newValue
-        updated[index].isChanged = newValue !== updated[index].originalValue
-        return updated
-      })
+      // Quality specs fields
+      const qualitySpecs = currentProduct.quality_specs || {}
+      const qualityFields: QualitySpecField[] = Object.entries(qualitySpecs).map(([key, value]) => ({
+        key,
+        label: formatLabel(key),
+        value: String(value),
+        originalValue: String(value),
+        isChanged: false,
+        isNew: false,
+        keyEditable: true,
+      }))
+      setQualitySpecFields(qualityFields)
     }
-  }
+  }, [currentProduct])
 
-  const handleLabelChange = (index: number, newLabel: string) => {
-    setNewFields(prev => {
+  const handleProductFieldChange = (index: number, newValue: string | number) => {
+    setProductFields(prev => {
       const updated = [...prev]
-      updated[index].label = newLabel
+      updated[index].value = newValue
+      updated[index].isChanged = newValue !== updated[index].originalValue
       return updated
     })
   }
 
-  const handleAddNewField = () => {
-    const newField: EditableField = {
-      path: `quality_specs.new_${Date.now()}`, // Temporary path
-      label: "",
-      value: "",
-      isNew: true,
-      isChanged: false,
-      originalValue: "",
-    }
-    setNewFields(prev => [...prev, newField])
+  const handleQualitySpecValueChange = (index: number, newValue: string | number) => {
+    setQualitySpecFields(prev => {
+      const updated = [...prev]
+      updated[index].value = newValue
+      updated[index].isChanged = newValue !== updated[index].originalValue
+      return updated
+    })
   }
 
-  const handleRemoveNewField = (index: number) => {
-    setNewFields(prev => prev.filter((_, i) => i !== index))
+  const handleQualitySpecKeyChange = (index: number, newKey: string) => {
+    setQualitySpecFields(prev => {
+      const updated = [...prev]
+      updated[index].key = newKey
+      updated[index].label = formatLabel(newKey)
+      updated[index].isChanged = true
+      return updated
+    })
+  }
+
+  const handleAddQualitySpec = () => {
+    const newField: QualitySpecField = {
+      key: '',
+      label: '',
+      value: '',
+      originalValue: '',
+      isChanged: false,
+      isNew: true,
+      keyEditable: true,
+    }
+    setQualitySpecFields(prev => [...prev, newField])
+  }
+
+  const handleRemoveQualitySpec = (index: number) => {
+    setQualitySpecFields(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleReset = () => {
-    setFields(prev =>
+    setProductFields(prev =>
       prev.map(field => ({
         ...field,
         value: field.originalValue,
         isChanged: false,
       }))
     )
-    setNewFields([])
+    setQualitySpecFields(prev =>
+      prev.filter(f => !f.isNew).map(field => ({
+        ...field,
+        value: field.originalValue,
+        isChanged: false,
+      }))
+    )
     setError(null)
     setSuccess(false)
   }
 
-  const hasAnyChanges = fields.some(f => f.isChanged) || newFields.some(f => f.value)
+  const hasAnyChanges = 
+    productFields.some(f => f.isChanged) || 
+    qualitySpecFields.some(f => f.isChanged || f.isNew)
 
   const handleSaveAll = async () => {
     try {
@@ -136,13 +167,33 @@ export function InlineComplianceEditor({
       setSuccess(false)
 
       // Build update payload
-      const updateData = buildUpdatePayload(
-        [...fields.filter(f => f.isChanged), ...newFields.filter(f => f.label && f.value)],
-        currentProduct
-      )
+      const updateData: Record<string, unknown> = {}
 
-      // Update product
-      await productService.update(productId, updateData)
+      // Add changed product fields
+      productFields.forEach(field => {
+        if (field.isChanged) {
+          updateData[field.key] = field.value
+        }
+      })
+
+      // Build quality_specs
+      const qualitySpecs: Record<string, unknown> = {}
+      qualitySpecFields.forEach(field => {
+        if (field.key && field.value) {
+          const sanitizedKey = field.key.toLowerCase().replace(/ /g, "_").replace(/[^a-z0-9_]/g, "")
+          qualitySpecs[sanitizedKey] = field.value
+        }
+      })
+
+      if (Object.keys(qualitySpecs).length > 0) {
+        updateData.quality_specs = qualitySpecs
+      }
+
+      console.log("=== Full Product Update Payload ===")
+      console.log(JSON.stringify(updateData, null, 2))
+
+      // Update product (PATCH allows partial updates)
+      await productService.update(productId, updateData as unknown as Parameters<typeof productService.update>[1])
 
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -151,7 +202,7 @@ export function InlineComplianceEditor({
       await onSaveComplete()
 
       // Reset new fields after successful save
-      setNewFields([])
+      setQualitySpecFields(prev => prev.filter(f => !f.isNew || (f.key && f.value)))
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } }
       setError(error.response?.data?.message || "Gagal menyimpan perubahan")
@@ -161,12 +212,12 @@ export function InlineComplianceEditor({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header dengan tombol aksi */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-bold text-[#0C4A6E]">Product Attributes Editor</h3>
-          <p className="text-sm text-[#7DD3FC]">Edit atribut langsung di tabel. Label | Value</p>
+          <p className="text-sm text-[#7DD3FC]">Edit semua atribut produk untuk menyesuaikan dengan rekomendasi AI</p>
         </div>
         <div className="flex gap-2">
           {hasAnyChanges && (
@@ -218,52 +269,122 @@ export function InlineComplianceEditor({
         </Alert>
       )}
 
-      {/* Table: Existing Fields from Compliance Issues */}
+      {/* Table 1: Product Attributes */}
       <div className="border-2 border-[#e0f2fe] rounded-2xl overflow-hidden">
+        <div className="bg-[#0284C7] p-3">
+          <h4 className="text-sm font-bold text-white flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Product Attributes
+          </h4>
+        </div>
         <table className="w-full">
           <thead className="bg-[#E0F2FE]">
             <tr>
-              <th className="text-left p-3 text-sm font-bold text-[#0C4A6E] w-1/3">Label</th>
-              <th className="text-left p-3 text-sm font-bold text-[#0C4A6E]">Value</th>
+              <th className="text-left p-3 text-sm font-bold text-[#0C4A6E] w-1/3">Attribute</th>
+              <th className="text-left p-3 text-sm font-bold text-[#0C4A6E]">Current Value</th>
               <th className="text-center p-3 text-sm font-bold text-[#0C4A6E] w-24">Status</th>
             </tr>
           </thead>
           <tbody>
-            {fields.length === 0 ? (
+            {productFields.map((field, index) => (
+              <tr key={field.key} className={`border-t border-[#e0f2fe] ${field.isChanged ? 'bg-[#FEF3C7]' : 'bg-white'}`}>
+                <td className="p-3">
+                  <span className="font-bold text-[#0C4A6E]">{field.label}</span>
+                </td>
+                <td className="p-3">
+                  {field.type === 'textarea' ? (
+                    <Textarea
+                      value={field.value}
+                      onChange={(e) => handleProductFieldChange(index, e.target.value)}
+                      className="w-full border-2 border-[#e0f2fe] focus:border-[#0284C7] rounded-xl"
+                      rows={3}
+                      disabled={loading}
+                    />
+                  ) : (
+                    <Input
+                      value={field.value}
+                      onChange={(e) => handleProductFieldChange(index, e.target.value)}
+                      className="w-full border-2 border-[#e0f2fe] focus:border-[#0284C7] rounded-xl"
+                      disabled={loading}
+                    />
+                  )}
+                </td>
+                <td className="p-3 text-center">
+                  {field.isChanged ? (
+                    <Badge variant="accent" className="text-xs">Modified</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs">Original</Badge>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Table 2: Quality Specs (Editable Keys) */}
+      <div className="border-2 border-[#0284C7] rounded-2xl overflow-hidden">
+        <div className="bg-[#0284C7] p-3 flex items-center justify-between">
+          <h4 className="text-sm font-bold text-white">Quality Specifications (Attribute & Value Editable)</h4>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleAddQualitySpec}
+            disabled={loading}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Specification
+          </Button>
+        </div>
+        <table className="w-full">
+          <thead className="bg-[#E0F2FE]">
+            <tr>
+              <th className="text-left p-3 text-sm font-bold text-[#0C4A6E] w-1/3">Attribute Name</th>
+              <th className="text-left p-3 text-sm font-bold text-[#0C4A6E]">Value</th>
+              <th className="text-center p-3 text-sm font-bold text-[#0C4A6E] w-24">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {qualitySpecFields.length === 0 ? (
               <tr>
                 <td colSpan={3} className="text-center py-8 text-[#7DD3FC]">
-                  Tidak ada field yang perlu diperbaiki
+                  Klik &quot;Add Specification&quot; untuk menambah quality specs
                 </td>
               </tr>
             ) : (
-              fields.map((field, index) => (
-                <tr key={index} className={`border-t border-[#e0f2fe] ${field.isChanged ? 'bg-[#FEF3C7]' : 'bg-white'}`}>
+              qualitySpecFields.map((field, index) => (
+                <tr key={index} className={`border-t border-[#e0f2fe] ${field.isChanged || field.isNew ? 'bg-[#F0F9FF]' : 'bg-white'}`}>
                   <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-[#F59E0B]" />
-                      <span className="font-bold text-[#0C4A6E]">{field.label}</span>
-                    </div>
+                    <Input
+                      value={field.key}
+                      onChange={(e) => handleQualitySpecKeyChange(index, e.target.value)}
+                      placeholder="attribute_name"
+                      className="w-full border-2 border-[#e0f2fe] focus:border-[#0284C7] rounded-xl font-mono text-sm"
+                      disabled={loading}
+                    />
                   </td>
                   <td className="p-3">
-                    {isMultilineField(field.path) ? (
-                      <Textarea
-                        value={field.value}
-                        onChange={(e) => handleFieldChange(index, e.target.value)}
-                        className="w-full border-2 border-[#e0f2fe] focus:border-[#0284C7] rounded-xl"
-                        rows={3}
-                        disabled={loading}
-                      />
-                    ) : (
-                      <Input
-                        value={field.value}
-                        onChange={(e) => handleFieldChange(index, e.target.value)}
-                        className="w-full border-2 border-[#e0f2fe] focus:border-[#0284C7] rounded-xl"
-                        disabled={loading}
-                      />
-                    )}
+                    <Textarea
+                      value={field.value}
+                      onChange={(e) => handleQualitySpecValueChange(index, e.target.value)}
+                      placeholder="Value..."
+                      className="w-full border-2 border-[#e0f2fe] focus:border-[#0284C7] rounded-xl"
+                      rows={2}
+                      disabled={loading}
+                    />
                   </td>
                   <td className="p-3 text-center">
-                    {field.isChanged ? (
+                    {field.isNew ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRemoveQualitySpec(index)}
+                        disabled={loading}
+                        className="text-[#EF4444] hover:bg-[#FEE2E2]"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    ) : field.isChanged ? (
                       <Badge variant="accent" className="text-xs">Modified</Badge>
                     ) : (
                       <Badge variant="outline" className="text-xs">Original</Badge>
@@ -276,162 +397,21 @@ export function InlineComplianceEditor({
         </table>
       </div>
 
-      {/* Add New Attributes Section */}
-      <div className="border-2 border-[#0284C7] rounded-2xl overflow-hidden">
-        <div className="bg-[#0284C7] p-3 flex items-center justify-between">
-          <h4 className="text-sm font-bold text-white">Tambah Atribut Baru (quality_specs)</h4>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={handleAddNewField}
-            disabled={loading}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Attribute
-          </Button>
-        </div>
-        <table className="w-full">
-          <thead className="bg-[#E0F2FE]">
-            <tr>
-              <th className="text-left p-3 text-sm font-bold text-[#0C4A6E] w-1/3">Label</th>
-              <th className="text-left p-3 text-sm font-bold text-[#0C4A6E]">Value</th>
-              <th className="text-center p-3 text-sm font-bold text-[#0C4A6E] w-24">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {newFields.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="text-center py-8 text-[#7DD3FC]">
-                  Klik &quot;Add Attribute&quot; untuk menambah atribut baru
-                </td>
-              </tr>
-            ) : (
-              newFields.map((field, index) => (
-                <tr key={index} className="border-t border-[#e0f2fe] bg-[#F0F9FF]">
-                  <td className="p-3">
-                    <Input
-                      value={field.label}
-                      onChange={(e) => handleLabelChange(index, e.target.value)}
-                      placeholder="Nama atribut..."
-                      className="w-full border-2 border-[#e0f2fe] focus:border-[#0284C7] rounded-xl"
-                      disabled={loading}
-                    />
-                  </td>
-                  <td className="p-3">
-                    <Textarea
-                      value={field.value}
-                      onChange={(e) => handleFieldChange(index, e.target.value, true)}
-                      placeholder="Nilai atribut..."
-                      className="w-full border-2 border-[#e0f2fe] focus:border-[#0284C7] rounded-xl"
-                      rows={2}
-                      disabled={loading}
-                    />
-                  </td>
-                  <td className="p-3 text-center">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRemoveNewField(index)}
-                      disabled={loading}
-                      className="text-[#EF4444] hover:bg-[#FEE2E2]"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
       {/* Info Box */}
       <div className="bg-[#E0F2FE] border-2 border-[#0284C7] rounded-xl p-4">
         <p className="text-xs text-[#0C4A6E]">
-          <strong>💡 Tip:</strong> Value yang sudah ada di product akan ditampilkan. Edit langsung di kolom Value, 
-          lalu klik &quot;Save All Changes&quot;. Atribut baru akan ditambahkan ke quality_specs.
+          <strong>💡 Tip:</strong> Gunakan Compliance Issues dan Recommendations sebagai panduan untuk mengedit atribut produk. 
+          Untuk Quality Specs, Anda bisa mengedit nama atribut dan nilainya, atau menambah atribut baru sesuai kebutuhan regulasi.
         </p>
       </div>
     </div>
   )
 }
 
-// Helper functions
-function getFieldPathFromIssue(issue: ComplianceIssue): string {
-  const typeToFieldMap: Record<string, string> = {
-    "Material Composition": "material_composition",
-    "Nutrition Facts": "quality_specs.nutrition_facts",
-    "Allergen Info": "quality_specs.allergen_info",
-    "Ingredients": "quality_specs.ingredients",
-    "Packaging Type": "packaging_type",
-    "Durability Claim": "durability_claim",
-    "Country of Origin": "quality_specs.country_of_origin",
-    "FDA Registration": "quality_specs.fda_registration_status",
-    "Material Grade": "quality_specs.material_grade",
-    "Labeling Compliance": "quality_specs.labeling_compliance",
-  }
-  return typeToFieldMap[issue.type] || "quality_specs." + issue.type.toLowerCase().replace(/ /g, "_")
-}
-
-function getCurrentValueFromProduct(path: string, product: Product): string | number {
-  if (!product) return ""
-  
-  if (path.includes('.')) {
-    const [parent, child] = path.split('.')
-    if (parent === 'quality_specs' && product.quality_specs) {
-      return (product.quality_specs as any)[child] || ""
-    }
-  } else {
-    return (product as any)[path] || ""
-  }
-  
-  return ""
-}
-
-function buildUpdatePayload(
-  changedFields: EditableField[],
-  currentProduct: Product | null
-): Record<string, unknown> {
-  const updateData: Record<string, unknown> = {}
-  const qualitySpecs: Record<string, unknown> = {
-    ...(currentProduct?.quality_specs || {})
-  }
-
-  changedFields.forEach(field => {
-    const { path, value, label, isNew } = field
-
-    if (isNew) {
-      // New attribute -> add to quality_specs dengan label sebagai key
-      const key = label.toLowerCase().replace(/ /g, "_")
-      qualitySpecs[key] = value
-    } else if (path.includes('.')) {
-      const [parent, child] = path.split('.')
-      if (parent === 'quality_specs') {
-        qualitySpecs[child] = value
-      }
-    } else {
-      updateData[path] = value
-    }
-  })
-
-  // Always include quality_specs (merged)
-  if (Object.keys(qualitySpecs).length > 0) {
-    updateData.quality_specs = qualitySpecs
-  }
-
-  return updateData
-}
-
-function isMultilineField(fieldPath: string): boolean {
-  const multilineFields = [
-    'description_local',
-    'material_composition',
-    'durability_claim',
-    'quality_specs.ingredients',
-    'quality_specs.nutrition_facts',
-    'quality_specs.allergen_info',
-    'quality_specs.allergen_information',
-    'quality_specs.labeling_compliance',
-  ]
-  return multilineFields.includes(fieldPath)
+// Helper function
+function formatLabel(key: string): string {
+  return key
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }

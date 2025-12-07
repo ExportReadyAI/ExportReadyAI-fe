@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useAuthStore } from "@/lib/stores/auth.store"
 import { exportAnalysisService, productService } from "@/lib/api/services"
@@ -19,7 +19,6 @@ import {
   ArrowLeft,
   FileText,
   Globe,
-  Package,
   AlertTriangle,
   CheckCircle2,
   Info,
@@ -45,30 +44,30 @@ export default function ExportAnalysisDetailPage() {
 
   const analysisId = params?.id as string
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login")
-      return
+  const fetchProductData = async (productId: number) => {
+    try {
+      const response = await productService.get(productId)
+      const productData = 'data' in response ? (response as { data: Product }).data : response
+      setCurrentProduct(productData)
+    } catch (err) {
+      console.error('Failed to fetch product:', err)
     }
+  }
 
-    if (analysisId) {
-      fetchAnalysis()
-    }
-  }, [isAuthenticated, router, analysisId])
-
-  const fetchAnalysis = async () => {
+  const fetchAnalysis = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
       const response = await exportAnalysisService.get(analysisId)
 
       if (response && typeof response === 'object') {
-        if ('success' in response && (response as any).success) {
-          const analysisData = (response as any).data
+        if ('success' in response && (response as { success: boolean; data: ExportAnalysis }).success) {
+          const analysisData = (response as { success: boolean; data: ExportAnalysis }).data
           setAnalysis(analysisData)
           // Fetch product data
-          if (analysisData?.product || analysisData?.product_id) {
-            await fetchProductData(analysisData.product || analysisData.product_id)
+          const productId = analysisData?.product || analysisData?.product_id
+          if (productId) {
+            await fetchProductData(productId)
           }
         } else {
           setAnalysis(response as ExportAnalysis)
@@ -78,22 +77,24 @@ export default function ExportAnalysisDetailPage() {
           }
         }
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Terjadi kesalahan")
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } }
+      setError(error.response?.data?.message || "Terjadi kesalahan")
     } finally {
       setLoading(false)
     }
-  }
+  }, [analysisId])
 
-  const fetchProductData = async (productId: number) => {
-    try {
-      const response = await productService.get(productId)
-      const productData = 'data' in response ? (response as any).data : response
-      setCurrentProduct(productData)
-    } catch (err) {
-      console.error('Failed to fetch product:', err)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login")
+      return
     }
-  }
+
+    if (analysisId) {
+      fetchAnalysis()
+    }
+  }, [isAuthenticated, router, analysisId, fetchAnalysis])
 
   const handleReanalyze = async () => {
     if (!analysis) return
@@ -102,11 +103,12 @@ export default function ExportAnalysisDetailPage() {
       setReanalyzing(true)
       const response = await exportAnalysisService.reanalyze(analysis.id)
       if (response.success && response.data) {
-        setAnalysis((response.data as any) || response.data)
+        setAnalysis(response.data || (response as unknown as { data: ExportAnalysis }).data)
         setReanalyzeModalOpen(false)
       }
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || "Gagal re-analyze")
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } }
+      throw new Error(error.response?.data?.message || "Gagal re-analyze")
     } finally {
       setReanalyzing(false)
     }
@@ -118,8 +120,9 @@ export default function ExportAnalysisDetailPage() {
     try {
       await exportAnalysisService.delete(analysis.id)
       router.push("/export-analysis")
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || "Gagal menghapus analisis")
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } }
+      throw new Error(error.response?.data?.message || "Gagal menghapus analisis")
     }
   }
 
@@ -299,34 +302,42 @@ export default function ExportAnalysisDetailPage() {
             </div>
           </div>
 
-          {/* Compliance Issues & Inline Editor */}
-          <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe] lg:col-span-2">
+          {/* Compliance Issues & Product Editor */}
+          <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe] lg:col-span-2 mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-[#EF4444]" />
-                Compliance Issues & Product Attributes
+                Compliance Issues & Product Editor
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!isAdmin() && analysis.compliance_issues && analysis.compliance_issues.length > 0 ? (
+              {!isAdmin() && currentProduct ? (
                 <div className="space-y-6">
-                  {/* Show issues summary */}
-                  <div className="bg-[#FEF3C7] border-2 border-[#F59E0B] rounded-2xl p-4">
-                    <h4 className="font-bold text-[#92400E] mb-2">Found {analysis.compliance_issues.length} Issues:</h4>
-                    <ul className="space-y-1">
-                      {analysis.compliance_issues.map((issue, index) => (
-                        <li key={index} className="text-sm text-[#92400E] flex items-start gap-2">
-                          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                          <span><strong>{issue.type}:</strong> {issue.description}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {/* Compliance Issues sebagai catatan/panduan */}
+                  {analysis.compliance_issues && analysis.compliance_issues.length > 0 && (
+                    <div className="bg-[#FEF3C7] border-2 border-[#F59E0B] rounded-2xl p-4">
+                      <h4 className="font-bold text-[#92400E] mb-2 flex items-center gap-2">
+                        <Info className="h-5 w-5" />
+                        Catatan: {analysis.compliance_issues.length} Issues Ditemukan
+                      </h4>
+                      <p className="text-sm text-[#92400E] mb-3">
+                        Gunakan daftar berikut sebagai panduan untuk mengedit atribut produk di bawah:
+                      </p>
+                      <ul className="space-y-1">
+                        {analysis.compliance_issues.map((issue, index) => (
+                          <li key={index} className="text-sm text-[#92400E] flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                            <span><strong>{issue.type}:</strong> {issue.description}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                  {/* Inline Editor */}
+                  {/* Full Product Editor */}
                   <InlineComplianceEditor
                     productId={getProductId()}
-                    complianceIssues={analysis.compliance_issues}
+                    complianceIssues={analysis.compliance_issues || []}
                     currentProduct={currentProduct}
                     onSaveComplete={fetchAnalysis}
                   />
@@ -342,7 +353,7 @@ export default function ExportAnalysisDetailPage() {
                         {getSeverityIcon(issue.severity)}
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge variant={getSeverityBadgeVariant(issue.severity) as any}>
+                            <Badge variant={getSeverityBadgeVariant(issue.severity) as "outline" | "destructive" | "accent"}>
                               {issue.severity}
                             </Badge>
                             <span className="text-sm font-bold text-[#0C4A6E]">
