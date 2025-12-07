@@ -179,8 +179,8 @@ export default function ExportAnalysisPage() {
         return
       }
 
-      // Check if any product is enriched
-      const hasEnrichedProduct = productsData.some(p => p.is_enriched)
+      // Check if any product is enriched (has enrichment with hs_code_recommendation)
+      const hasEnrichedProduct = productsData.some(p => p.enrichment && p.enrichment.hs_code_recommendation)
       if (!hasEnrichedProduct) {
         setNotEnrichedModalOpen(true)
         return

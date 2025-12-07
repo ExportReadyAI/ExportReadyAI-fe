@@ -155,8 +155,9 @@ export default function MarketingPage() {
   }
 
   const handleOpenIntelligence = (product: Product) => {
-    // Check if product is enriched
-    if (!product.is_enriched) {
+    // Check if product is enriched (has enrichment data)
+    const isEnriched = product.enrichment && product.enrichment.hs_code_recommendation
+    if (!isEnriched) {
       setSelectedProductId(product.id)
       setSelectedProductName(product.name_local)
       setNotEnrichedModalOpen(true)
@@ -169,8 +170,9 @@ export default function MarketingPage() {
   }
 
   const handleOpenPricing = (product: Product) => {
-    // Check if product is enriched
-    if (!product.is_enriched) {
+    // Check if product is enriched (has enrichment data)
+    const isEnriched = product.enrichment && product.enrichment.hs_code_recommendation
+    if (!isEnriched) {
       setSelectedProductId(product.id)
       setSelectedProductName(product.name_local)
       setNotEnrichedModalOpen(true)
