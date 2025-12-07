@@ -108,6 +108,11 @@ export default function ExportAnalysisDetailPage() {
     }
   }
 
+  // Helper: Get product ID (support both field names)
+  const getProductId = () => {
+    return analysis?.product || analysis?.product_id || 0
+  }
+
   // Handler untuk Smart Repair: Fix -> Save -> Re-analyze
   const handleSmartRepair = (fieldPath: string, fieldLabel: string, currentValue: string | number) => {
     setRepairField({ path: fieldPath, label: fieldLabel, value: currentValue })
@@ -115,9 +120,10 @@ export default function ExportAnalysisDetailPage() {
   }
 
   const handleRepairComplete = async () => {
-    // After repair, trigger reanalyze
-    await handleReanalyze()
+    // After repair, refresh analysis data (no auto re-analyze)
     setSmartRepairOpen(false)
+    // Refresh analysis to show product_changed warning
+    await fetchAnalysis()
   }
 
   const getScoreColor = (score: number) => {
@@ -436,7 +442,7 @@ export default function ExportAnalysisDetailPage() {
               open={smartRepairOpen}
               onOpenChange={setSmartRepairOpen}
               analysisId={analysis.id}
-              productId={analysis.product_id}
+              productId={getProductId()}
               fieldPath={repairField.path}
               fieldLabel={repairField.label}
               currentValue={repairField.value}

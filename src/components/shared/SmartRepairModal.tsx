@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Loader2, Wrench } from "lucide-react"
 import { productService } from "@/lib/api/services"
-import type { Product, UpdateProductRequest, ApiResponse } from "@/lib/api/types"
+import type { UpdateProductRequest } from "@/lib/api/types"
 
 interface SmartRepairModalProps {
   open: boolean
@@ -18,7 +18,7 @@ interface SmartRepairModalProps {
   fieldPath: string // e.g., "quality_specs.nutrition_facts" or "material_composition"
   fieldLabel: string // e.g., "Nutrition Facts" or "Material Composition"
   currentValue: string | number
-  onRepairComplete: (updatedProduct: Product) => Promise<void>
+  onRepairComplete: () => Promise<void>
 }
 
 /**
@@ -56,33 +56,16 @@ export function SmartRepairModal({
       setLoading(true)
       setError(null)
 
-      // 1. Get current product data
-      const productResponse = await productService.get(productId)
-      let product: Product
+      // Build minimal update payload (only the field being updated)
+      const updateData = buildMinimalPayload(fieldPath, value)
 
-      if ('success' in productResponse && productResponse.success) {
-        product = (productResponse as ApiResponse<Product>).data
-      } else {
-        product = productResponse as Product
-      }
+      // Update product using PATCH (partial update)
+      await productService.update(productId, updateData as unknown as UpdateProductRequest)
 
-      // 2. Build update payload based on field path
-      const updateData = buildUpdatePayload(product, fieldPath, value)
+      // Call onRepairComplete (for UI refresh, no auto re-analyze)
+      await onRepairComplete()
 
-      // 3. Update product
-      const updateResponse = await productService.update(productId, updateData)
-      let updatedProduct: Product
-
-      if ('success' in updateResponse && updateResponse.success) {
-        updatedProduct = (updateResponse as ApiResponse<Product>).data
-      } else {
-        updatedProduct = updateResponse as Product
-      }
-
-      // 4. Call onRepairComplete which should handle reanalyze
-      await onRepairComplete(updatedProduct)
-
-      // 5. Close modal
+      // Close modal
       onOpenChange(false)
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -101,7 +84,7 @@ export function SmartRepairModal({
             Smart Repair: {fieldLabel}
           </DialogTitle>
           <DialogDescription className="text-[#0284C7]">
-            Perbaiki data produk dan otomatis perbarui analisis.
+            Perbaiki data produk. Setelah simpan, Anda dapat melakukan re-analyze untuk memperbarui skor compliance.
           </DialogDescription>
         </DialogHeader>
 
@@ -128,7 +111,7 @@ export function SmartRepairModal({
               />
             )}
             <p className="text-xs text-[#7DD3FC]">
-              💡 Tip: Data akan tersimpan dan analisis akan diperbarui otomatis
+              💡 Tip: Setelah data tersimpan, klik tombol &quot;Re-analyze&quot; untuk memperbarui skor compliance
             </p>
           </div>
 
@@ -158,10 +141,10 @@ export function SmartRepairModal({
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Memproses...
+                Menyimpan...
               </>
             ) : (
-              "Simpan & Perbarui Analisis"
+              "Simpan Perubahan"
             )}
           </Button>
         </DialogFooter>
@@ -170,37 +153,23 @@ export function SmartRepairModal({
   )
 }
 
-// Helper: Build update payload based on field path
-function buildUpdatePayload(product: Product, fieldPath: string, value: string | number): UpdateProductRequest {
-  const updateData: UpdateProductRequest = {
-    name_local: product.name_local,
-    category_id: product.category_id,
-    description_local: product.description_local,
-    material_composition: product.material_composition,
-    production_technique: product.production_technique,
-    finishing_type: product.finishing_type,
-    quality_specs: { ...product.quality_specs },
-    durability_claim: product.durability_claim,
-    packaging_type: product.packaging_type,
-    dimensions_l_w_h: { ...product.dimensions_l_w_h },
-    weight_net: product.weight_net,
-    weight_gross: product.weight_gross,
-  }
+// Helper: Build minimal payload - only the field being updated (for PATCH)
+function buildMinimalPayload(fieldPath: string, value: string | number): Record<string, unknown> {
+  const updateData: Record<string, unknown> = {}
 
   // Handle nested fields (e.g., quality_specs.nutrition_facts)
   if (fieldPath.includes('.')) {
     const [parent, child] = fieldPath.split('.')
     if (parent === 'quality_specs') {
-      updateData.quality_specs[child] = value
+      updateData.quality_specs = { [child]: value }
     } else if (parent === 'dimensions_l_w_h') {
-      updateData.dimensions_l_w_h[child as 'l' | 'w' | 'h'] = parseFloat(String(value)) || 0
+      updateData.dimensions_l_w_h = {
+        [child]: parseFloat(String(value)) || 0
+      }
     }
   } else {
-    // Handle top-level fields with type casting
-    const fieldKey = fieldPath as keyof UpdateProductRequest
-    if (fieldKey in updateData) {
-      (updateData[fieldKey] as string | number) = value
-    }
+    // Handle top-level fields
+    updateData[fieldPath] = value
   }
 
   return updateData

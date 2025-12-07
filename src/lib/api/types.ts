@@ -31,6 +31,7 @@ export interface PaginatedResponse<T> {
 export interface ApiRequestConfig {
   params?: Record<string, any>;
   headers?: Record<string, string>;
+  timeout?: number; // Timeout in milliseconds
 }
 
 // User Types
@@ -282,7 +283,8 @@ export interface RegulationRecommendationsResponse {
 
 export interface ExportAnalysis {
   id: number;
-  product_id: number;
+  product: number; // Backend uses 'product' not 'product_id'
+  product_id?: number; // Alias for backward compatibility
   product_name: string;
   product_category?: string;
   product_material?: string;
