@@ -36,6 +36,7 @@ export default function BuyerRequestDetailPage() {
   const [matchedCatalogs, setMatchedCatalogs] = useState<MatchedCatalog[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMatches, setLoadingMatches] = useState(false)
+  const [selectingCatalog, setSelectingCatalog] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
 
@@ -102,6 +103,31 @@ export default function BuyerRequestDetailPage() {
       console.error("Error fetching matched catalogs:", err)
     } finally {
       setLoadingMatches(false)
+    }
+  }
+
+  const handleSelectCatalog = async (catalogId: number, umkmId: number) => {
+    if (!confirm("Apakah Anda yakin ingin memilih katalog ini? Request akan ditutup setelah memilih.")) {
+      return
+    }
+
+    try {
+      setSelectingCatalog(catalogId)
+      // Update request status to Closed (or Matched, depending on business logic)
+      await buyerRequestService.updateStatus(requestId, { 
+        status: 'Closed',
+        // You might want to also save selected_catalog_id and selected_umkm_id
+      })
+      
+      // Refresh request data
+      await fetchRequest()
+      setSelectingCatalog(null)
+      
+      alert("Katalog berhasil dipilih! Request Anda telah ditutup.")
+    } catch (err: any) {
+      console.error("Error selecting catalog:", err)
+      setError(err.response?.data?.message || "Gagal memilih katalog")
+      setSelectingCatalog(null)
     }
   }
 
@@ -194,6 +220,18 @@ export default function BuyerRequestDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Closed Request Notice */}
+          {request.status === 'Closed' && isBuyer() && (
+            <Alert className="mb-6 border-gray-400 bg-gray-50">
+              <AlertDescription className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-gray-600" />
+                <span className="text-gray-700 font-medium">
+                  Request ini telah ditutup. Anda telah memilih supplier untuk produk ini.
+                </span>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Content */}
@@ -396,15 +434,35 @@ export default function BuyerRequestDetailPage() {
                               </div>
                             </div>
 
-                            {/* Action Button */}
-                            <div className="mt-4 pt-4 border-t border-[#e0f2fe]">
+                            {/* Action Buttons */}
+                            <div className="mt-4 pt-4 border-t border-[#e0f2fe] flex gap-2">
                               <Button
                                 onClick={() => router.push(`/catalogs/${umkm.catalog.id}`)}
-                                className="w-full bg-[#0284C7] hover:bg-[#0369a1] shadow-[0_4px_0_0_#065985]"
+                                variant="outline"
+                                className="flex-1"
                               >
                                 <Package className="mr-2 h-4 w-4" />
-                                View Full Catalog
+                                View Details
                               </Button>
+                              {request?.status === 'Open' && (
+                                <Button
+                                  onClick={() => handleSelectCatalog(umkm.catalog.id, umkm.umkm_id)}
+                                  disabled={selectingCatalog === umkm.catalog.id}
+                                  className="flex-1 bg-[#22C55E] hover:bg-[#16a34a] shadow-[0_4px_0_0_#15803d]"
+                                >
+                                  {selectingCatalog === umkm.catalog.id ? (
+                                    <>
+                                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                                      Selecting...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Star className="mr-2 h-4 w-4" />
+                                      Select This
+                                    </>
+                                  )}
+                                </Button>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
