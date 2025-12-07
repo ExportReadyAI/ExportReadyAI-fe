@@ -1405,12 +1405,14 @@ Educational → Browse Modules → Pilih Modul → Baca Artikel → Download Att
 7. Lanjut ke artikel berikutnya
 
 [Educational Hub]
-<img width="1356" height="628" alt="image" src="https://github.com/user-attachments/assets/3bd61358-8e59-4463-8b44-2a683d75b5a9" />
+<img width="1355" height="633" alt="image" src="https://github.com/user-attachments/assets/22c134c9-a5d0-4015-999c-b8168551c7bb" />
+
 
 
 [Educational Article]
-<img width="1345" height="624" alt="image" src="https://github.com/user-attachments/assets/1df7534c-94ae-4795-b892-910b2cff47d3" />
-<img width="1358" height="620" alt="image" src="https://github.com/user-attachments/assets/accf72e6-4a13-4661-b3ea-120326977375" />
+<img width="1362" height="624" alt="image" src="https://github.com/user-attachments/assets/f5881f5a-01c8-4b8b-bfd7-28f3a6af22ec" />
+<img width="1359" height="630" alt="image" src="https://github.com/user-attachments/assets/ec812c69-2ecc-4d1e-8361-ddab078604b8" />
+
 
 
 ---
