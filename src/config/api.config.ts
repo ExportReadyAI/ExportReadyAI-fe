@@ -65,6 +65,7 @@ export const API_ENDPOINTS = {
     delete: (id: string | number) => `/export-analysis/${id}/`,
     reanalyze: (id: string | number) => `/export-analysis/${id}/reanalyze/`,
     compare: '/export-analysis/compare/',
+    regulationRecommendations: (id: string | number) => `/export-analysis/${id}/regulation-recommendations/`,
   },
   
   // Costing endpoints

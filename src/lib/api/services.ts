@@ -55,6 +55,7 @@ import type {
   UpdateEducationalModuleRequest,
   CreateEducationalArticleRequest,
   UpdateEducationalArticleRequest,
+  RegulationRecommendationsResponse,
 } from './types';
 
 /**
@@ -239,6 +240,13 @@ export const exportAnalysisService = {
   
   compare: (data: CompareCountriesRequest) =>
     post<CompareCountriesResponse>(API_ENDPOINTS.exportAnalysis.compare, data),
+  
+  // NEW: Get detailed regulation recommendations
+  getRegulationRecommendations: (id: string | number, language: 'id' | 'en' = 'id') =>
+    get<RegulationRecommendationsResponse>(
+      API_ENDPOINTS.exportAnalysis.regulationRecommendations(id),
+      { headers: { 'Accept-Language': language } }
+    ),
 };
 
 // ==================== Costing Services ====================

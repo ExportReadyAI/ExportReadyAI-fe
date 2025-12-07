@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CircularProgress } from "@/components/shared/CircularProgress"
 import { DeleteAnalysisModal } from "@/components/shared/DeleteAnalysisModal"
 import { ReanalyzeModal } from "@/components/shared/ReanalyzeModal"
+import { ProductChangedAlert } from "@/components/shared/ProductChangedAlert"
+import { SmartRepairModal } from "@/components/shared/SmartRepairModal"
 import {
   ArrowLeft,
   FileText,
@@ -24,8 +26,9 @@ import {
   Trash2,
   Download,
   RefreshCw,
+  BookOpen,
 } from "lucide-react"
-import type { ExportAnalysis, ComplianceIssue } from "@/lib/api/types"
+import type { ExportAnalysis, ComplianceIssue, Product } from "@/lib/api/types"
 
 export default function ExportAnalysisDetailPage() {
   const router = useRouter()
@@ -36,6 +39,13 @@ export default function ExportAnalysisDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [reanalyzeModalOpen, setReanalyzeModalOpen] = useState(false)
+  const [reanalyzing, setReanalyzing] = useState(false)
+  const [smartRepairOpen, setSmartRepairOpen] = useState(false)
+  const [repairField, setRepairField] = useState<{
+    path: string
+    label: string
+    value: string | number
+  } | null>(null)
 
   const analysisId = params?.id as string
 
@@ -74,6 +84,7 @@ export default function ExportAnalysisDetailPage() {
     if (!analysis) return
 
     try {
+      setReanalyzing(true)
       const response = await exportAnalysisService.reanalyze(analysis.id)
       if (response.success && response.data) {
         setAnalysis((response.data as any) || response.data)
@@ -81,6 +92,8 @@ export default function ExportAnalysisDetailPage() {
       }
     } catch (err: any) {
       throw new Error(err.response?.data?.message || "Gagal re-analyze")
+    } finally {
+      setReanalyzing(false)
     }
   }
 
@@ -95,6 +108,18 @@ export default function ExportAnalysisDetailPage() {
     }
   }
 
+  // Handler untuk Smart Repair: Fix -> Save -> Re-analyze
+  const handleSmartRepair = (fieldPath: string, fieldLabel: string, currentValue: string | number) => {
+    setRepairField({ path: fieldPath, label: fieldLabel, value: currentValue })
+    setSmartRepairOpen(true)
+  }
+
+  const handleRepairComplete = async () => {
+    // After repair, trigger reanalyze
+    await handleReanalyze()
+    setSmartRepairOpen(false)
+  }
+
   const getScoreColor = (score: number) => {
     if (score < 50) return "#EF4444"
     if (score <= 75) return "#F59E0B"
@@ -105,6 +130,19 @@ export default function ExportAnalysisDetailPage() {
     if (score < 50) return "Not Ready"
     if (score <= 75) return "Need Improvement"
     return "Ready"
+  }
+
+  // Helper: Map issue type to product field path
+  const getFieldPathFromIssue = (issue: ComplianceIssue): string => {
+    const typeToFieldMap: Record<string, string> = {
+      "Material Composition": "material_composition",
+      "Nutrition Facts": "quality_specs.nutrition_facts",
+      "Allergen Info": "quality_specs.allergen_info",
+      "Ingredients": "quality_specs.ingredients",
+      "Packaging Type": "packaging_type",
+      "Durability Claim": "durability_claim",
+    }
+    return typeToFieldMap[issue.type] || "description_local"
   }
 
   const getSeverityIcon = (severity: string) => {
@@ -196,6 +234,13 @@ export default function ExportAnalysisDetailPage() {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
+                    onClick={() => router.push(`/export-analysis/${analysis.id}/regulation-recommendations`)}
+                  >
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Detail Rekomendasi
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => setReanalyzeModalOpen(true)}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
@@ -223,8 +268,17 @@ export default function ExportAnalysisDetailPage() {
             </Alert>
           )}
 
+          {/* Product Changed Warning */}
+          {analysis.product_changed && (
+            <ProductChangedAlert
+              productName={analysis.snapshot_product_name || analysis.product_name}
+              onReanalyze={() => setReanalyzeModalOpen(true)}
+              loading={reanalyzing}
+            />
+          )}
+
           {/* Score Section */}
-          <div className="bg-gradient-to-r from-[#0284C7] to-[#0369a1] rounded-3xl p-8 shadow-[0_6px_0_0_#064e7a] mb-6">
+          <div className="bg-linear-to-r from-[#0284C7] to-[#0369a1] rounded-3xl p-8 shadow-[0_6px_0_0_#064e7a] mb-6">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
               <div className="text-center lg:text-left">
                 <h2 className="text-2xl font-extrabold text-white mb-2">
@@ -282,16 +336,32 @@ export default function ExportAnalysisDetailPage() {
                               {issue.description}
                             </p>
                             {issue.your_value && issue.required_value && (
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div className="bg-white rounded-xl p-2">
-                                  <p className="font-bold text-[#7DD3FC]">Your Value</p>
-                                  <p className="font-bold text-[#0C4A6E]">{issue.your_value}</p>
+                              <>
+                                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                                  <div className="bg-white rounded-xl p-2">
+                                    <p className="font-bold text-[#7DD3FC]">Your Value</p>
+                                    <p className="font-bold text-[#0C4A6E]">{issue.your_value}</p>
+                                  </div>
+                                  <div className="bg-white rounded-xl p-2">
+                                    <p className="font-bold text-[#7DD3FC]">Required</p>
+                                    <p className="font-bold text-[#0C4A6E]">{issue.required_value}</p>
+                                  </div>
                                 </div>
-                                <div className="bg-white rounded-xl p-2">
-                                  <p className="font-bold text-[#7DD3FC]">Required</p>
-                                  <p className="font-bold text-[#0C4A6E]">{issue.required_value}</p>
-                                </div>
-                              </div>
+                                {!isAdmin() && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleSmartRepair(
+                                      getFieldPathFromIssue(issue),
+                                      issue.type,
+                                      issue.your_value || ""
+                                    )}
+                                    className="mt-2 text-xs"
+                                  >
+                                    🔧 Fix This
+                                  </Button>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
@@ -360,6 +430,19 @@ export default function ExportAnalysisDetailPage() {
             productName={analysis.product_name}
             countryName={analysis.country_name}
           />
+
+          {repairField && (
+            <SmartRepairModal
+              open={smartRepairOpen}
+              onOpenChange={setSmartRepairOpen}
+              analysisId={analysis.id}
+              productId={analysis.product_id}
+              fieldPath={repairField.path}
+              fieldLabel={repairField.label}
+              currentValue={repairField.value}
+              onRepairComplete={handleRepairComplete}
+            />
+          )}
         </div>
       </main>
     </div>
