@@ -1,4 +1,4 @@
-# ExportReadyAI - Frontend
+# ExportReadyAI - Dokumentation
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/2fd38586-1ba9-4e4e-9d43-cb62c97edfa0" alt="ExportReadyAI Logo" width="200"/>
