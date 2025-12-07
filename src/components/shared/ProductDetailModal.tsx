@@ -155,12 +155,12 @@ export function ProductDetailModal({
         await fetchProduct(product.id.toString())
         onProductUpdated?.()
       } else {
-        setError(response.message || "Gagal melakukan AI enrichment")
+        setError(response.message || "Gagal generate SKU & HS Code")
       }
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
-        "Terjadi kesalahan saat melakukan AI enrichment"
+        "Terjadi kesalahan saat generate SKU & HS Code"
       )
     } finally {
       setEnriching(false)
@@ -354,8 +354,8 @@ export function ProductDetailModal({
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-extrabold text-[#0C4A6E]">AI Enrichment</h4>
-                      <p className="text-xs text-[#F59E0B] font-medium">Powered by AI</p>
+                      <h4 className="font-extrabold text-[#0C4A6E]">Generate SKU & HS Code</h4>
+                      <p className="text-xs text-[#F59E0B] font-medium">Powered by AI & HS Database</p>
                     </div>
                   </div>
                   {!isAdmin() && (

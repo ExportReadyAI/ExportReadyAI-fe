@@ -13,7 +13,6 @@ import {
   Sparkles,
   Rocket,
   FileText,
-  Calculator,
   ShoppingCart,
   Truck,
   UserCircle,
@@ -57,13 +56,6 @@ const menuItems = [
     icon: FileText,
     roles: ["Admin", "UMKM"],
     color: "#0284C7",
-  },
-  {
-    title: "Costing",
-    href: "/costing",
-    icon: Calculator,
-    roles: ["Admin", "UMKM"],
-    color: "#22C55E",
   },
   {
     title: "Marketing",

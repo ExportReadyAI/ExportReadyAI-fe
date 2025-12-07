@@ -136,7 +136,7 @@ export default function ManualOverrideEnrichmentPage() {
             <CardHeader>
               <CardTitle>Manual Override AI Results</CardTitle>
               <CardDescription>
-                Edit hasil AI enrichment secara manual untuk produk:{" "}
+                Edit hasil generate SKU & HS Code secara manual untuk produk:{" "}
                 <strong>{product.name_local}</strong>
               </CardDescription>
             </CardHeader>

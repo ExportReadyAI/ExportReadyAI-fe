@@ -280,7 +280,7 @@ export default function CreateExportAnalysisPage() {
                   {products.length === 0 && !loadingProducts && (
                     <Alert variant="warning">
                       <AlertDescription>
-                        Tidak ada produk dengan AI enrichment. Silakan enrich produk terlebih dahulu.
+                        Tidak ada produk dengan SKU & HS Code. Silakan generate SKU & HS Code terlebih dahulu.
                       </AlertDescription>
                     </Alert>
                   )}

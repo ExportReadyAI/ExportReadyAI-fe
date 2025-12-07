@@ -73,12 +73,12 @@ export default function ProductDetailPage() {
         // Refresh product data
         await fetchProduct(product.id.toString())
       } else {
-        setError(response.message || "Gagal melakukan AI enrichment")
+        setError(response.message || "Gagal generate SKU & HS Code")
       }
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
-        "Terjadi kesalahan saat melakukan AI enrichment"
+        "Terjadi kesalahan saat generate SKU & HS Code"
       )
     } finally {
       setEnriching(false)
@@ -288,7 +288,7 @@ export default function ProductDetailPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5" />
-                  AI Enrichment Results
+                  Generate SKU & HS Code
                 </CardTitle>
                 {!isAdmin() && (
                   <Button
@@ -304,12 +304,12 @@ export default function ProductDetailPage() {
                     ) : enrichment ? (
                       <>
                         <Sparkles className="mr-2 h-4 w-4" />
-                        Re-run AI Enrichment
+                        Re-generate
                       </>
                     ) : (
                       <>
                         <Sparkles className="mr-2 h-4 w-4" />
-                        Run AI Enrichment
+                        Generate
                       </>
                     )}
                   </Button>
@@ -460,9 +460,9 @@ export default function ProductDetailPage() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Belum ada hasil AI enrichment</p>
+                  <p>Belum ada hasil generate SKU & HS Code</p>
                   <p className="text-sm mt-2">
-                    Klik "Run AI Enrichment" untuk memulai
+                    Klik "Generate" untuk memulai
                   </p>
                 </div>
               )}
