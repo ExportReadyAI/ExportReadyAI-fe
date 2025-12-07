@@ -461,16 +461,39 @@ export interface UpdateBuyerRequestStatusRequest {
   status: BuyerRequestStatus;
 }
 
+export interface MatchedUMKMContactInfo {
+  company_name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+}
+
+export interface MatchedUMKMCatalog {
+  id: number;
+  display_name: string;
+  export_description?: string;
+  marketing_description?: string;
+  technical_specs?: CatalogTechnicalSpecs;
+  tags?: string[];
+  min_order_quantity: number;
+  unit_type: string;
+  available_stock?: number;
+  base_price_exw: number;
+  base_price_fob?: number;
+  base_price_cif?: number;
+  lead_time_days: number;
+  primary_image_url?: string;
+}
+
 export interface MatchedUMKM {
   umkm_id: number;
   company_name: string;
   email: string;
-  contact_info?: string;
-  match_score: number;
-  base_score?: number;
-  spec_match_score?: number;
-  capability_score?: number;
-  business_profile_id?: number;
+  full_name?: string;
+  match: string; // "match" value from API
+  contact_info?: MatchedUMKMContactInfo;
+  catalog: MatchedUMKMCatalog;
 }
 
 // ==================== Module 6: Forwarder Types ====================
