@@ -826,7 +826,8 @@ Korea route: [List of top-rated]
 </tr>
 </table>
 
-**Step-by-step:**
+**Step-by-step:**<img width="1356" height="629" alt="image" src="https://github.com/user-attachments/assets/89a9de51-80f0-4bb6-a721-5b13bf73b0aa" />
+
 1. Buka halaman Marketing
 2. Pilih tab "Market Intelligence"
 3. Pilih produk dari dropdown
@@ -951,8 +952,9 @@ CIF: $262.56
 
 [Pricing Calculator]
 <img width="372" height="507" alt="image" src="https://github.com/user-attachments/assets/700f3f6b-c8d0-44d8-a6f1-a93af43b6de2" />
-<img width="377" height="563" alt="image" src="https://github.com/user-attachments/assets/aee8bc1f-22d5-4cbe-a4e3-77bb9aa93214" />
-<img width="371" height="563" alt="image" src="https://github.com/user-attachments/assets/7c2d828e-ebd4-4815-bb63-8a89b4541dea" />
+<img width="1356" height="629" alt="image" src="https://github.com/user-attachments/assets/06dfa9b5-0256-44ea-8dfb-a87128a6ea01" />
+<img width="1357" height="624" alt="image" src="https://github.com/user-attachments/assets/247874f5-b0dd-4a6d-9612-0af344631542" />
+
 
 ---
 
