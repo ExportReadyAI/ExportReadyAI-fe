@@ -621,14 +621,40 @@ export interface CreateProductPricingRequest {
 
 export interface CatalogImage {
   id: number;
-  catalog_id: number;
-  image_url: string;
+  catalog_id?: number;
+  image?: string; // File upload path
+  image_url?: string; // External URL
+  url: string; // Final URL to use (from image or image_url)
   alt_text?: string;
   sort_order: number;
   is_primary: boolean;
   created_at?: string;
 }
 
+// Predefined variant type codes
+export type VariantTypeCode = 'color' | 'size' | 'material' | 'flavor' | 'weight' | 'style' | 'pattern' | 'custom';
+
+export interface PredefinedVariantType {
+  code: VariantTypeCode;
+  label: string;
+}
+
+export interface VariantOption {
+  id: number;
+  option_name: string;
+  sort_order: number;
+  is_available: boolean;
+}
+
+export interface VariantType {
+  id: number;
+  type_code: VariantTypeCode;
+  type_name: string;
+  sort_order: number;
+  options: VariantOption[];
+}
+
+// Legacy - keep for backwards compatibility
 export interface CatalogVariant {
   id: number;
   catalog_id: number;
@@ -674,7 +700,8 @@ export interface Catalog {
   tags?: string[];
   is_published: boolean;
   images: CatalogImage[];
-  variants: CatalogVariant[];
+  variant_types?: VariantType[];
+  variants?: CatalogVariant[]; // Legacy
   primary_image?: string;
   variant_count?: number;
   created_at: string;
@@ -708,6 +735,32 @@ export interface CreateCatalogImageRequest {
 
 export interface UpdateCatalogImageRequest extends Partial<CreateCatalogImageRequest> {}
 
+// Variant Type Requests
+export interface CreateVariantTypeRequest {
+  type_code?: VariantTypeCode;
+  type_name: string;
+  sort_order?: number;
+  options?: CreateVariantOptionRequest[];
+}
+
+export interface UpdateVariantTypeRequest {
+  type_name?: string;
+  sort_order?: number;
+}
+
+export interface CreateVariantOptionRequest {
+  option_name: string;
+  sort_order?: number;
+  is_available?: boolean;
+}
+
+export interface UpdateVariantOptionRequest {
+  option_name?: string;
+  sort_order?: number;
+  is_available?: boolean;
+}
+
+// Legacy variant requests
 export interface CreateCatalogVariantRequest {
   variant_name: string;
   variant_price: number;

@@ -52,6 +52,7 @@ export const API_ENDPOINTS = {
     // AI Features
     marketIntelligence: (id: string | number) => `/products/${id}/ai/market-intelligence/`,
     pricing: (id: string | number) => `/products/${id}/ai/pricing/`,
+    catalogDescription: (id: string | number) => `/products/${id}/ai/catalog-description/`,
   },
   
   // Country endpoints
@@ -143,11 +144,11 @@ export const API_ENDPOINTS = {
     // Images
     images: (catalogId: string | number) => `/catalogs/${catalogId}/images/`,
     imageDetail: (catalogId: string | number, imageId: string | number) => `/catalogs/${catalogId}/images/${imageId}/`,
-    // Variants
-    variants: (catalogId: string | number) => `/catalogs/${catalogId}/variants/`,
-    variantDetail: (catalogId: string | number, variantId: string | number) => `/catalogs/${catalogId}/variants/${variantId}/`,
-    // AI Description
-    aiDescription: (catalogId: string | number) => `/catalogs/${catalogId}/ai/description/`,
+    // Variant Types & Options
+    variantTypes: (catalogId: string | number) => `/catalogs/${catalogId}/variant-types/`,
+    variantTypeDetail: (catalogId: string | number, typeId: string | number) => `/catalogs/${catalogId}/variant-types/${typeId}/`,
+    variantOptions: (catalogId: string | number, typeId: string | number) => `/catalogs/${catalogId}/variant-types/${typeId}/options/`,
+    variantOptionDetail: (catalogId: string | number, typeId: string | number, optionId: string | number) => `/catalogs/${catalogId}/variant-types/${typeId}/options/${optionId}/`,
     // Public
     publicList: '/catalogs/public/',
     publicDetail: (id: string | number) => `/catalogs/public/${id}/`,
