@@ -270,7 +270,8 @@ Halaman utama yang menampilkan value proposition ExportReadyAI secara komprehens
 - Footer dengan navigasi
 
 ![Landing Page Hero](docs/screenshots/landing_hero.png)
-*Screenshot: Hero section landing page*
+<img width="1360" height="628" alt="image" src="https://github.com/user-attachments/assets/2057ef02-e167-4878-96e6-07cadcd690ea" />
+
 
 ![Landing Page Features](docs/screenshots/landing_features.png)
 *Screenshot: Section fitur platform*
