@@ -11,7 +11,6 @@ const nextConfig: NextConfig = {
   
   // Production optimizations
   reactStrictMode: true,
-  output: 'standalone',
   compress: true,
   
   // Image optimization for Supabase
