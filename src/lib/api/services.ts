@@ -65,9 +65,13 @@ import type {
   CatalogImage,
   CreateCatalogImageRequest,
   UpdateCatalogImageRequest,
-  CatalogVariant,
-  CreateCatalogVariantRequest,
-  UpdateCatalogVariantRequest,
+  VariantType,
+  VariantOption,
+  PredefinedVariantType,
+  CreateVariantTypeRequest,
+  UpdateVariantTypeRequest,
+  CreateVariantOptionRequest,
+  UpdateVariantOptionRequest,
   AIDescriptionResponse,
   GenerateAIDescriptionRequest,
 } from './types';
@@ -523,18 +527,31 @@ export const catalogService = {
   deleteImage: (catalogId: string | number, imageId: string | number) =>
     del<{ message: string }>(API_ENDPOINTS.catalogs.imageDetail(catalogId, imageId)),
 
-  // Variants
-  listVariants: (catalogId: string | number) =>
-    get<CatalogVariant[]>(API_ENDPOINTS.catalogs.variants(catalogId)),
+  // Variant Types
+  listVariantTypes: (catalogId: string | number) =>
+    get<{ data: VariantType[]; predefined_types: PredefinedVariantType[] }>(API_ENDPOINTS.catalogs.variantTypes(catalogId)),
 
-  addVariant: (catalogId: string | number, data: CreateCatalogVariantRequest) =>
-    post<CatalogVariant>(API_ENDPOINTS.catalogs.variants(catalogId), data),
+  addVariantType: (catalogId: string | number, data: CreateVariantTypeRequest) =>
+    post<VariantType>(API_ENDPOINTS.catalogs.variantTypes(catalogId), data),
 
-  updateVariant: (catalogId: string | number, variantId: string | number, data: UpdateCatalogVariantRequest) =>
-    put<CatalogVariant>(API_ENDPOINTS.catalogs.variantDetail(catalogId, variantId), data),
+  updateVariantType: (catalogId: string | number, typeId: string | number, data: UpdateVariantTypeRequest) =>
+    put<VariantType>(API_ENDPOINTS.catalogs.variantTypeDetail(catalogId, typeId), data),
 
-  deleteVariant: (catalogId: string | number, variantId: string | number) =>
-    del<{ message: string }>(API_ENDPOINTS.catalogs.variantDetail(catalogId, variantId)),
+  deleteVariantType: (catalogId: string | number, typeId: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.catalogs.variantTypeDetail(catalogId, typeId)),
+
+  // Variant Options
+  listVariantOptions: (catalogId: string | number, typeId: string | number) =>
+    get<VariantOption[]>(API_ENDPOINTS.catalogs.variantOptions(catalogId, typeId)),
+
+  addVariantOption: (catalogId: string | number, typeId: string | number, data: CreateVariantOptionRequest) =>
+    post<VariantOption>(API_ENDPOINTS.catalogs.variantOptions(catalogId, typeId), data),
+
+  updateVariantOption: (catalogId: string | number, typeId: string | number, optionId: string | number, data: UpdateVariantOptionRequest) =>
+    put<VariantOption>(API_ENDPOINTS.catalogs.variantOptionDetail(catalogId, typeId, optionId), data),
+
+  deleteVariantOption: (catalogId: string | number, typeId: string | number, optionId: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.catalogs.variantOptionDetail(catalogId, typeId, optionId)),
 
   // Public endpoints
   listPublic: () =>

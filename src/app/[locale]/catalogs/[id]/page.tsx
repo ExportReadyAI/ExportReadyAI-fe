@@ -258,10 +258,10 @@ export default function CatalogDetailPage() {
             <div className="bg-white rounded-2xl border-2 border-[#e0f2fe] p-4 shadow-[0_4px_0_0_#e0f2fe]">
               <div className="flex items-center gap-2 text-[#7DD3FC] mb-1">
                 <Layers className="h-4 w-4" />
-                <span className="text-xs font-bold">Varian</span>
+                <span className="text-xs font-bold">Tipe Varian</span>
               </div>
               <p className="text-xl font-extrabold text-[#0C4A6E]">
-                {catalog.variants?.length || 0}
+                {catalog.variant_types?.length || 0}
               </p>
             </div>
           </div>
@@ -317,7 +317,7 @@ export default function CatalogDetailPage() {
                 }`}
               >
                 <Layers className="h-5 w-5" />
-                Varian ({catalog.variants?.length || 0})
+                Varian ({catalog.variant_types?.length || 0})
               </button>
             </div>
           </div>
@@ -342,7 +342,7 @@ export default function CatalogDetailPage() {
           {activeTab === "variants" && (
             <CatalogVariantsManager
               catalogId={parseInt(catalogId)}
-              variants={catalog.variants || []}
+              variantTypes={catalog.variant_types || []}
               onUpdate={fetchCatalog}
             />
           )}

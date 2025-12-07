@@ -144,9 +144,11 @@ export const API_ENDPOINTS = {
     // Images
     images: (catalogId: string | number) => `/catalogs/${catalogId}/images/`,
     imageDetail: (catalogId: string | number, imageId: string | number) => `/catalogs/${catalogId}/images/${imageId}/`,
-    // Variants
-    variants: (catalogId: string | number) => `/catalogs/${catalogId}/variants/`,
-    variantDetail: (catalogId: string | number, variantId: string | number) => `/catalogs/${catalogId}/variants/${variantId}/`,
+    // Variant Types & Options
+    variantTypes: (catalogId: string | number) => `/catalogs/${catalogId}/variant-types/`,
+    variantTypeDetail: (catalogId: string | number, typeId: string | number) => `/catalogs/${catalogId}/variant-types/${typeId}/`,
+    variantOptions: (catalogId: string | number, typeId: string | number) => `/catalogs/${catalogId}/variant-types/${typeId}/options/`,
+    variantOptionDetail: (catalogId: string | number, typeId: string | number, optionId: string | number) => `/catalogs/${catalogId}/variant-types/${typeId}/options/${optionId}/`,
     // Public
     publicList: '/catalogs/public/',
     publicDetail: (id: string | number) => `/catalogs/public/${id}/`,

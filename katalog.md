@@ -152,24 +152,97 @@ await fetch(`/api/v1/catalogs/${catalogId}/images/`, {
 
 ---
 
-## 3. Catalog Variants
+## 3. Catalog Variants (Variant Types & Options)
 
-### List/Add Variants
+Struktur baru: Variant Type (jenis varian) → Options (pilihan)
+
+### Predefined Variant Types (Dropdown)
+| Code | Label |
+|------|-------|
+| color | Warna |
+| size | Ukuran |
+| material | Bahan |
+| flavor | Rasa |
+| weight | Berat |
+| style | Gaya |
+| pattern | Motif |
+| custom | Lainnya |
+
+### List/Add Variant Types
 ```
-GET/POST /api/v1/catalogs/{catalog_id}/variants/
+GET/POST /api/v1/catalogs/{catalog_id}/variant-types/
+```
+**Input (POST):**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| type_code | string | No | Predefined code (default: "custom") |
+| type_name | string | Yes | Display name (e.g., "Warna", "Ukuran") |
+| sort_order | int | No | Display order |
+| options | array | No | Array of options to create |
+
+**Options array item:**
+| Field | Type | Required |
+|-------|------|----------|
+| option_name | string | Yes |
+| sort_order | int | No |
+| is_available | bool | No (default: true) |
+
+**Contoh Request:**
+```json
+{
+  "type_code": "color",
+  "type_name": "Warna",
+  "options": [
+    { "option_name": "Merah" },
+    { "option_name": "Hijau" },
+    { "option_name": "Biru" }
+  ]
+}
+```
+
+**Response GET (includes predefined_types untuk dropdown):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "type_code": "color",
+      "type_name": "Warna",
+      "sort_order": 0,
+      "options": [
+        { "id": 1, "option_name": "Merah", "is_available": true },
+        { "id": 2, "option_name": "Hijau", "is_available": true }
+      ]
+    }
+  ],
+  "predefined_types": [
+    { "code": "color", "label": "Warna" },
+    { "code": "size", "label": "Ukuran" },
+    ...
+  ]
+}
+```
+
+### Update/Delete Variant Type
+```
+PUT/DELETE /api/v1/catalogs/{catalog_id}/variant-types/{type_id}/
+```
+
+### List/Add Options to Variant Type
+```
+GET/POST /api/v1/catalogs/{catalog_id}/variant-types/{type_id}/options/
 ```
 **Input (POST):**
 | Field | Type | Required |
 |-------|------|----------|
-| variant_name | string | Yes |
-| variant_price | decimal | Yes |
-| attributes | json | No |
-| moq_variant | decimal | No (default: 1) |
-| sku | string | No |
+| option_name | string | Yes |
+| sort_order | int | No |
+| is_available | bool | No |
 
-### Update/Delete Variant
+### Update/Delete Option
 ```
-PUT/DELETE /api/v1/catalogs/{catalog_id}/variants/{variant_id}/
+PUT/DELETE /api/v1/catalogs/{catalog_id}/variant-types/{type_id}/options/{option_id}/
 ```
 
 ---
