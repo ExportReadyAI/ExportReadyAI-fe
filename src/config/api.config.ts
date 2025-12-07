@@ -49,6 +49,9 @@ export const API_ENDPOINTS = {
     update: (id: string | number) => `/products/${id}/`,
     delete: (id: string | number) => `/products/${id}/`,
     enrich: (id: string | number) => `/products/${id}/enrich/`,
+    // AI Features
+    marketIntelligence: (id: string | number) => `/products/${id}/ai/market-intelligence/`,
+    pricing: (id: string | number) => `/products/${id}/ai/pricing/`,
   },
   
   // Country endpoints
@@ -129,6 +132,26 @@ export const API_ENDPOINTS = {
       delete: (id: string | number) => `/educational/articles/${id}/`,
       uploadFile: (id: string | number) => `/educational/articles/${id}/upload-file/`,
     },
+  },
+
+  // Catalog endpoints
+  catalogs: {
+    list: '/catalogs/',
+    create: '/catalogs/',
+    detail: (id: string | number) => `/catalogs/${id}/`,
+    update: (id: string | number) => `/catalogs/${id}/`,
+    delete: (id: string | number) => `/catalogs/${id}/`,
+    // Images
+    images: (catalogId: string | number) => `/catalogs/${catalogId}/images/`,
+    imageDetail: (catalogId: string | number, imageId: string | number) => `/catalogs/${catalogId}/images/${imageId}/`,
+    // Variants
+    variants: (catalogId: string | number) => `/catalogs/${catalogId}/variants/`,
+    variantDetail: (catalogId: string | number, variantId: string | number) => `/catalogs/${catalogId}/variants/${variantId}/`,
+    // AI Description
+    aiDescription: (catalogId: string | number) => `/catalogs/${catalogId}/ai/description/`,
+    // Public
+    publicList: '/catalogs/public/',
+    publicDetail: (id: string | number) => `/catalogs/public/${id}/`,
   },
 } as const;
 

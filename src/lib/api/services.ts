@@ -56,6 +56,21 @@ import type {
   CreateEducationalArticleRequest,
   UpdateEducationalArticleRequest,
   RegulationRecommendationsResponse,
+  MarketIntelligence,
+  CreateMarketIntelligenceRequest,
+  ProductPricing,
+  CreateProductPricingRequest,
+  Catalog,
+  CreateCatalogRequest,
+  UpdateCatalogRequest,
+  CatalogImage,
+  CreateCatalogImageRequest,
+  UpdateCatalogImageRequest,
+  CatalogVariant,
+  CreateCatalogVariantRequest,
+  UpdateCatalogVariantRequest,
+  AIDescriptionResponse,
+  GenerateAIDescriptionRequest,
 } from './types';
 
 /**
@@ -198,6 +213,20 @@ export const productService = {
     patch<Product>(API_ENDPOINTS.products.detail(id), {
       enrichment: data,
     }),
+
+  // AI Market Intelligence
+  getMarketIntelligence: (id: string | number) =>
+    get<MarketIntelligence>(API_ENDPOINTS.products.marketIntelligence(id)),
+
+  createMarketIntelligence: (id: string | number, data?: CreateMarketIntelligenceRequest) =>
+    post<MarketIntelligence>(API_ENDPOINTS.products.marketIntelligence(id), data || {}),
+
+  // AI Pricing
+  getPricing: (id: string | number) =>
+    get<ProductPricing>(API_ENDPOINTS.products.pricing(id)),
+
+  createPricing: (id: string | number, data: CreateProductPricingRequest) =>
+    post<ProductPricing>(API_ENDPOINTS.products.pricing(id), data),
 };
 
 // ==================== Country Services ====================
@@ -230,7 +259,13 @@ export const exportAnalysisService = {
     get<ExportAnalysis>(API_ENDPOINTS.exportAnalysis.detail(id)),
   
   create: (data: CreateExportAnalysisRequest) =>
-    post<ExportAnalysis>(API_ENDPOINTS.exportAnalysis.create, data),
+    post<ExportAnalysis>(
+      API_ENDPOINTS.exportAnalysis.create,
+      data,
+      {
+        timeout: 300000, // 5 minutes (300 seconds) for AI processing
+      }
+    ),
   
   delete: (id: string | number) =>
     del<{ message: string }>(API_ENDPOINTS.exportAnalysis.delete(id)),
@@ -432,6 +467,66 @@ export const educationalService = {
       );
     },
   },
+};
+
+// ==================== Catalog Services ====================
+
+export const catalogService = {
+  // Catalog CRUD
+  list: (params?: { page?: number; limit?: number }) =>
+    get<Catalog[] | { results: Catalog[]; count: number }>(
+      API_ENDPOINTS.catalogs.list,
+      { params }
+    ),
+
+  get: (id: string | number) =>
+    get<Catalog>(API_ENDPOINTS.catalogs.detail(id)),
+
+  create: (data: CreateCatalogRequest) =>
+    post<Catalog>(API_ENDPOINTS.catalogs.create, data),
+
+  update: (id: string | number, data: UpdateCatalogRequest) =>
+    put<Catalog>(API_ENDPOINTS.catalogs.update(id), data),
+
+  delete: (id: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.catalogs.delete(id)),
+
+  // Images
+  listImages: (catalogId: string | number) =>
+    get<CatalogImage[]>(API_ENDPOINTS.catalogs.images(catalogId)),
+
+  addImage: (catalogId: string | number, data: CreateCatalogImageRequest) =>
+    post<CatalogImage>(API_ENDPOINTS.catalogs.images(catalogId), data),
+
+  updateImage: (catalogId: string | number, imageId: string | number, data: UpdateCatalogImageRequest) =>
+    put<CatalogImage>(API_ENDPOINTS.catalogs.imageDetail(catalogId, imageId), data),
+
+  deleteImage: (catalogId: string | number, imageId: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.catalogs.imageDetail(catalogId, imageId)),
+
+  // Variants
+  listVariants: (catalogId: string | number) =>
+    get<CatalogVariant[]>(API_ENDPOINTS.catalogs.variants(catalogId)),
+
+  addVariant: (catalogId: string | number, data: CreateCatalogVariantRequest) =>
+    post<CatalogVariant>(API_ENDPOINTS.catalogs.variants(catalogId), data),
+
+  updateVariant: (catalogId: string | number, variantId: string | number, data: UpdateCatalogVariantRequest) =>
+    put<CatalogVariant>(API_ENDPOINTS.catalogs.variantDetail(catalogId, variantId), data),
+
+  deleteVariant: (catalogId: string | number, variantId: string | number) =>
+    del<{ message: string }>(API_ENDPOINTS.catalogs.variantDetail(catalogId, variantId)),
+
+  // AI Description
+  generateDescription: (catalogId: string | number, data?: GenerateAIDescriptionRequest) =>
+    post<AIDescriptionResponse>(API_ENDPOINTS.catalogs.aiDescription(catalogId), data || {}),
+
+  // Public endpoints
+  listPublic: () =>
+    get<Catalog[]>(API_ENDPOINTS.catalogs.publicList),
+
+  getPublic: (id: string | number) =>
+    get<Catalog>(API_ENDPOINTS.catalogs.publicDetail(id)),
 };
 
 

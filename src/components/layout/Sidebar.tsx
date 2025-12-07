@@ -18,6 +18,8 @@ import {
   Truck,
   UserCircle,
   BookOpen,
+  TrendingUp,
+  BookMarked,
 } from "lucide-react"
 
 const menuItems = [
@@ -43,6 +45,13 @@ const menuItems = [
     color: "#F59E0B",
   },
   {
+    title: "Katalog",
+    href: "/catalogs",
+    icon: BookMarked,
+    roles: ["Admin", "UMKM"],
+    color: "#8B5CF6",
+  },
+  {
     title: "Export Analysis",
     href: "/export-analysis",
     icon: FileText,
@@ -55,6 +64,13 @@ const menuItems = [
     icon: Calculator,
     roles: ["Admin", "UMKM"],
     color: "#22C55E",
+  },
+  {
+    title: "Marketing",
+    href: "/marketing",
+    icon: TrendingUp,
+    roles: ["Admin", "UMKM"],
+    color: "#EC4899",
   },
   {
     title: "Buyer Requests",

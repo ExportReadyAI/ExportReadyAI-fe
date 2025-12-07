@@ -33,6 +33,7 @@ export default function ForwarderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reviewModalOpen, setReviewModalOpen] = useState(false)
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   const forwarderId = params?.id as string
