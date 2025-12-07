@@ -269,12 +269,13 @@ Halaman utama yang menampilkan value proposition ExportReadyAI secara komprehens
 - Vision & Mission
 - Footer dengan navigasi
 
-![Landing Page Hero](docs/screenshots/landing_hero.png)
-<img width="1360" height="628" alt="image" src="https://github.com/user-attachments/assets/2057ef02-e167-4878-96e6-07cadcd690ea" />
+[Landing Page Hero]
+<img width="1356" height="628" alt="image" src="https://github.com/user-attachments/assets/dd904c52-a8ab-47b8-96fd-c6a0e41391f5" />
 
 
-![Landing Page Features](docs/screenshots/landing_features.png)
-*Screenshot: Section fitur platform*
+[Landing Page Features]
+<img width="1354" height="629" alt="image" src="https://github.com/user-attachments/assets/18e229af-5aa8-40ce-be2f-91e08a48d225" />
+
 
 ---
 
@@ -302,11 +303,13 @@ Register → Pilih Role → Isi Data → Login → Dashboard
 - Persistent login via localStorage
 - Auto-refresh token saat expired
 
-![Login Page](docs/screenshots/login.png)
-*Screenshot: Halaman login*
+[Login Page]
+<img width="1360" height="627" alt="image" src="https://github.com/user-attachments/assets/17f9a651-2c9c-4943-9f70-df31f0a2e33c" />
 
-![Register Page](docs/screenshots/register.png)
-*Screenshot: Halaman registrasi dengan pilihan role*
+
+[Register Page]
+<img width="1352" height="625" alt="image" src="https://github.com/user-attachments/assets/4191b073-5c7c-4349-857a-b1284ff49a3b" />
+
 
 ---
 
@@ -335,11 +338,13 @@ Dashboard dinamis yang berbeda berdasarkan role pengguna.
 Login → Dashboard → Lihat Ringkasan → Quick Actions
 ```
 
-![Dashboard UMKM](docs/screenshots/dashboard_umkm.png)
-*Screenshot: Dashboard UMKM dengan statistik*
+[Dashboard UMKM]
+<img width="1352" height="627" alt="image" src="https://github.com/user-attachments/assets/3667f032-6181-4827-9f70-04fa5d29989d" />
 
-![Dashboard Admin](docs/screenshots/dashboard_admin.png)
-*Screenshot: Dashboard Admin dengan overview sistem*
+
+[Dashboard Admin]
+<img width="1350" height="627" alt="image" src="https://github.com/user-attachments/assets/6b8ef3b1-97ea-4bff-81b4-f74c46cacd60" />
+
 
 ---
 
@@ -377,14 +382,18 @@ Products → Tambah Produk → Isi Form Lengkap → Simpan → View Detail → R
 6. Klik produk untuk melihat detail
 7. Klik "Generate" untuk menjalankan AI Enrichment
 
-![Products List](docs/screenshots/products_list.png)
-*Screenshot: Daftar produk dengan status enrichment*
+[Products List]
+<img width="1362" height="633" alt="image" src="https://github.com/user-attachments/assets/b9fb5ce1-776b-4e2b-976d-7fa201dea489" />
 
-![Create Product](docs/screenshots/product_create.png)
-*Screenshot: Form tambah produk lengkap*
 
-![Product Detail](docs/screenshots/product_detail.png)
-*Screenshot: Detail produk dengan tombol AI*
+[Create Product]
+<img width="1356" height="627" alt="image" src="https://github.com/user-attachments/assets/c9d3b9c2-f134-492e-90c1-8cd785523839" />
+
+
+[Product Detail]
+<img width="377" height="561" alt="image" src="https://github.com/user-attachments/assets/fd4f0072-460c-4cd3-8618-79a44419e3e4" />
+<img width="376" height="276" alt="image" src="https://github.com/user-attachments/assets/a6d0aa4b-9b97-4aad-9348-67f1047a54a0" />
+
 
 ---
 
@@ -460,18 +469,16 @@ Marketing Highlights:
 2. Scroll ke section "Generate SKU & HS Code"
 3. Klik tombol "Generate"
 4. Tunggu proses AI (10-30 detik)
-5. Hasil ditampilkan: HS Code, SKU, Nama B2B, Deskripsi, Highlights
+5. Hasil ditampilkan: HS Code based by database, SKU, Nama B2B, Deskripsi, Highlights
 6. Klik icon Copy untuk menyalin ke clipboard
 7. Klik "Edit Manual" jika ingin menyesuaikan hasil
 
-![AI Enrichment Process](docs/screenshots/ai_enrichment_loading.png)
-*Screenshot: Proses AI sedang berjalan*
+[AI Generate SKU & HS Code  Process]
+<img width="368" height="560" alt="image" src="https://github.com/user-attachments/assets/177e2357-72b6-4c92-9b30-b34640726cd5" />
 
-![AI Enrichment Result](docs/screenshots/ai_enrichment_result.png)
-*Screenshot: Hasil AI enrichment lengkap*
 
-![AI Enrichment Edit](docs/screenshots/ai_enrichment_edit.png)
-*Screenshot: Edit manual hasil enrichment*
+[AI Generate SKU & HS Code Result]
+<img width="353" height="265" alt="image" src="https://github.com/user-attachments/assets/26de41e6-f4ae-4aee-813f-f842eb5b263a" />
 
 ---
 
@@ -566,14 +573,17 @@ TARIFF INFORMATION:
 8. Klik issue untuk edit inline jika sudah diperbaiki
 9. Klik "View Regulation Recommendations" untuk detail lengkap
 
-![Export Analysis Create](docs/screenshots/export_analysis_create.png)
-*Screenshot: Form buat analisis ekspor*
+[Export Analysis Create]
+<img width="1357" height="630" alt="image" src="https://github.com/user-attachments/assets/e7a7db63-3925-474b-b171-9a28ab058dd7" />
 
-![Export Analysis Result](docs/screenshots/export_analysis_result.png)
-*Screenshot: Hasil analisis dengan compliance issues*
 
-![Export Analysis Recommendations](docs/screenshots/export_analysis_recommendations.png)
-*Screenshot: Detail rekomendasi regulasi*
+[Export Analysis Result]
+<img width="1365" height="625" alt="image" src="https://github.com/user-attachments/assets/884d2135-2d6f-4591-a682-b5fb9266adc8" />
+
+
+[Export Analysis Recommendations]
+<img width="1353" height="623" alt="image" src="https://github.com/user-attachments/assets/7bb074ad-8ccb-49e1-8c3e-59ba0f4b3d82" />
+
 
 ---
 
@@ -678,8 +688,8 @@ USA (45):
 6. Lihat hasil perbandingan side-by-side
 7. Klik negara untuk detail lengkap
 
-![Country Comparison](docs/screenshots/export_analysis_compare.png)
-*Screenshot: Perbandingan antar negara*
+[Country Comparison]
+<img width="1284" height="563" alt="image" src="https://github.com/user-attachments/assets/f15b8d7f-5f33-47d4-924e-e9f6a2d3fc2a" />
 
 ---
 
@@ -790,8 +800,11 @@ Korea route: [List of top-rated]
 7. Klik negara untuk detail market info
 8. Lihat recommended forwarders per route
 
-![Market Intelligence](docs/screenshots/market_intelligence.png)
-*Screenshot: Hasil market intelligence dengan negara rekomendasi*
+[Market Intelligence]
+<img width="1284" height="563" alt="image" src="https://github.com/user-attachments/assets/f15b8d7f-5f33-47d4-924e-e9f6a2d3fc2a" />
+<img width="1284" height="567" alt="image" src="https://github.com/user-attachments/assets/cfc8b313-cb6f-40b4-9be0-3559419fd885" />
+<img width="1289" height="564" alt="image" src="https://github.com/user-attachments/assets/8227e5b9-270b-45b5-9b88-a842b19b2d49" />
+<img width="1282" height="558" alt="image" src="https://github.com/user-attachments/assets/4a2a5f1b-4714-4954-87f8-6276db271f0c" />
 
 ---
 
@@ -900,8 +913,10 @@ CIF: $262.56
 9. Lihat breakdown EXW, FOB, CIF
 10. Copy atau simpan untuk quotation
 
-![Pricing Calculator](docs/screenshots/pricing_calculator.png)
-*Screenshot: Kalkulator harga dengan breakdown*
+[Pricing Calculator]
+<img width="372" height="507" alt="image" src="https://github.com/user-attachments/assets/700f3f6b-c8d0-44d8-a6f1-a93af43b6de2" />
+<img width="377" height="563" alt="image" src="https://github.com/user-attachments/assets/aee8bc1f-22d5-4cbe-a4e3-77bb9aa93214" />
+<img width="371" height="563" alt="image" src="https://github.com/user-attachments/assets/7c2d828e-ebd4-4815-bb63-8a89b4541dea" />
 
 ---
 
@@ -932,11 +947,12 @@ Costing → Create New → Input Data → Save → View History → Edit/Delete
 8. Klik "Simpan"
 9. Costing tersimpan di daftar untuk referensi
 
-![Costing List](docs/screenshots/costing_list.png)
-*Screenshot: Daftar costing tersimpan*
+[Costing List]
+<img width="1353" height="628" alt="image" src="https://github.com/user-attachments/assets/170a8678-2075-4a83-a050-a306075c3130" />
 
-![Costing Detail](docs/screenshots/costing_detail.png)
-*Screenshot: Detail costing dengan breakdown*
+
+[Costing Detail]
+<img width="378" height="563" alt="image" src="https://github.com/user-attachments/assets/f5d33f22-784a-4f31-870c-eb84f1c05217" />
 
 ---
 
@@ -1023,8 +1039,8 @@ SAFETY INFORMATION:
 5. Edit jika diperlukan
 6. Klik "Save to Catalog"
 
-![Catalog AI Description](docs/screenshots/catalog_ai_description.png)
-*Screenshot: Generated catalog description*
+[Catalog AI Description]
+<img width="1358" height="627" alt="image" src="https://github.com/user-attachments/assets/d7c83162-2899-4959-8319-7599ec4edb2c" />
 
 ---
 
@@ -1061,17 +1077,25 @@ Catalogs → Create → Select Product → Add Details → Upload Images → Add
 10. Klik "Publish" untuk aktifkan katalog
 11. Katalog dapat dilihat Buyer dan Forwarder
 
-![Catalog Create](docs/screenshots/catalog_create.png)
-*Screenshot: Form buat katalog*
+[Catalog Create]
+<img width="1355" height="627" alt="image" src="https://github.com/user-attachments/assets/2ac49e62-6ede-4e41-928f-58396926d6ce" />
 
-![Catalog Images](docs/screenshots/catalog_images.png)
-*Screenshot: Manajemen foto katalog*
 
-![Catalog Variants](docs/screenshots/catalog_variants.png)
-*Screenshot: Manajemen varian produk*
+[Catalog Images]
+<img width="1357" height="619" alt="image" src="https://github.com/user-attachments/assets/2326345f-af1d-4a92-a5e2-576cf5951f24" />
 
-![Catalog Detail](docs/screenshots/catalog_detail.png)
-*Screenshot: Detail katalog lengkap*
+
+[Catalog Variants]
+<img width="1365" height="631" alt="image" src="https://github.com/user-attachments/assets/1b943b44-10ca-4c8e-ae08-27f223f8a8c8" />
+<img width="1355" height="628" alt="image" src="https://github.com/user-attachments/assets/c5f60bc4-8d3f-4d94-9bb8-13dfd33736c1" />
+
+
+[Catalog Detail]
+<img width="1360" height="635" alt="image" src="https://github.com/user-attachments/assets/2cfba307-628a-4ce7-b7c4-f18cd9917ecc" />
+<img width="1359" height="634" alt="image" src="https://github.com/user-attachments/assets/8e9078bb-ed13-40cb-a8d5-24374525097e" />
+<img width="1352" height="635" alt="image" src="https://github.com/user-attachments/assets/02edbd4c-321c-4c94-b6bc-733ae1f1b83b" />
+
+
 
 ---
 
@@ -1148,14 +1172,17 @@ Apakah ada yang ingin ditanyakan lebih detail?
 6. Lanjutkan dialog sesuai kebutuhan
 7. Session tersimpan otomatis
 
-![Chatbot Welcome](docs/screenshots/chatbot_welcome.png)
-*Screenshot: Welcome screen dengan suggestions*
+[Chatbot Welcome]
+<img width="1365" height="624" alt="image" src="https://github.com/user-attachments/assets/81fb1480-80f1-4c62-a68a-b197f1c2fe23" />
 
-![Chatbot Conversation](docs/screenshots/chatbot_conversation.png)
-*Screenshot: Percakapan dengan AI assistant*
 
-![Chatbot Sessions](docs/screenshots/chatbot_sessions.png)
-*Screenshot: Sidebar dengan multiple sessions*
+[Chatbot Conversation]
+<img width="1363" height="621" alt="image" src="https://github.com/user-attachments/assets/c2877d35-d139-407d-aec8-9db63744d463" />
+
+
+[Chatbot Sessions]
+<img width="1363" height="634" alt="image" src="https://github.com/user-attachments/assets/e50430a5-cfb6-4262-b557-72d2622ac0f0" />
+
 
 ---
 
@@ -1212,14 +1239,16 @@ Buyer Requests → Lihat Open Requests → Filter by Category → Lihat Detail �
 6. Lihat "Matched Catalogs" (katalog Anda yang cocok)
 7. Hubungi buyer jika tertarik
 
-![Buyer Request Create](docs/screenshots/buyer_request_create.png)
-*Screenshot: Form buat buyer request*
+[Buyer Request Create]
+<img width="1359" height="633" alt="image" src="https://github.com/user-attachments/assets/0c8b14c5-b612-4a18-814b-e0fc477f0f1a" />
 
-![Buyer Request List](docs/screenshots/buyer_request_list.png)
-*Screenshot: Daftar buyer requests*
 
-![Buyer Request Matched](docs/screenshots/buyer_request_matched.png)
-*Screenshot: Matched suppliers untuk request*
+[Buyer Request List]
+<img width="1356" height="630" alt="image" src="https://github.com/user-attachments/assets/00f6b20c-0c2e-465b-8eb8-161ebfadf6db" />
+
+
+[Buyer Request Matched]
+<img width="1364" height="630" alt="image" src="https://github.com/user-attachments/assets/cd5dab9d-8c81-4d3d-8738-65057de6b780" />
 
 ---
 
@@ -1242,11 +1271,13 @@ Database buyer internasional yang terverifikasi.
 Buyers → Browse → Filter by Category/Country → View Profile → Contact
 ```
 
-![Buyer List](docs/screenshots/buyer_list.png)
-*Screenshot: Daftar buyer dengan filter*
+[Buyer List]
+<img width="1357" height="624" alt="image" src="https://github.com/user-attachments/assets/c842c648-bc65-4ee1-9198-9c981e41155e" />
 
-![Buyer Profile](docs/screenshots/buyer_profile.png)
-*Screenshot: Detail profil buyer*
+
+[Buyer Profile]
+<img width="1365" height="628" alt="image" src="https://github.com/user-attachments/assets/e62263ed-0bff-455c-a885-7e72d2dc396b" />
+
 
 ---
 
@@ -1286,14 +1317,16 @@ Forwarders → Filter by Route → Sort by Rating → View Profile → Read Revi
 8. Contact via email/phone
 9. Setelah shipping, tinggalkan review
 
-![Forwarder List](docs/screenshots/forwarder_list.png)
-*Screenshot: Daftar forwarder dengan filter*
+[Forwarder List]
+<img width="1363" height="631" alt="image" src="https://github.com/user-attachments/assets/c398f3ed-87b2-4599-8db4-633d9667f8ae" />
 
-![Forwarder Detail](docs/screenshots/forwarder_detail.png)
-*Screenshot: Detail forwarder dengan reviews*
 
-![Forwarder Review](docs/screenshots/forwarder_review.png)
-*Screenshot: Form review forwarder*
+[Forwarder Detail]
+<img width="1352" height="624" alt="image" src="https://github.com/user-attachments/assets/fd09adce-6bf9-4f6f-b6e4-d0647afeb809" />
+
+
+[Forwarder Review]
+<img width="801" height="426" alt="image" src="https://github.com/user-attachments/assets/987a41c7-dd7b-4e93-a395-1d1e90cce46f" />
 
 ---
 
@@ -1333,11 +1366,14 @@ Educational → Browse Modules → Pilih Modul → Baca Artikel → Download Att
 6. Watch video jika ada
 7. Lanjut ke artikel berikutnya
 
-![Educational Hub](docs/screenshots/educational_hub.png)
-*Screenshot: Pusat pembelajaran dengan modul*
+[Educational Hub]
+<img width="1356" height="628" alt="image" src="https://github.com/user-attachments/assets/3bd61358-8e59-4463-8b44-2a683d75b5a9" />
 
-![Educational Article](docs/screenshots/educational_article.png)
-*Screenshot: Artikel dengan video dan attachment*
+
+[Educational Article]
+<img width="1345" height="624" alt="image" src="https://github.com/user-attachments/assets/1df7534c-94ae-4795-b892-910b2cff47d3" />
+<img width="1358" height="620" alt="image" src="https://github.com/user-attachments/assets/accf72e6-4a13-4661-b3ea-120326977375" />
+
 
 ---
 
@@ -1379,11 +1415,13 @@ Business Profile → Edit Profile → Upload Certifications → Save
 9. Save
 10. Sertifikasi muncul di profil dan katalog
 
-![Business Profile](docs/screenshots/business_profile.png)
-*Screenshot: Halaman profil bisnis*
+[Business Profile]
+<img width="1356" height="624" alt="image" src="https://github.com/user-attachments/assets/09a81310-96ad-4d8a-a21a-bd1868f66d1c" />
 
-![Certifications](docs/screenshots/certifications.png)
-*Screenshot: Manajemen sertifikasi*
+
+[Certifications]
+<img width="1356" height="628" alt="image" src="https://github.com/user-attachments/assets/58b656cb-f54b-4766-9efa-a746b942614d" />
+
 
 ---
 
@@ -1404,14 +1442,16 @@ Panel khusus administrator untuk manage platform.
 Dashboard → View Metrics → Users (manage) → Educational Admin (create content)
 ```
 
-![Admin Dashboard](docs/screenshots/admin_dashboard.png)
-*Screenshot: Admin dashboard*
+[Admin Dashboard]
+<img width="1364" height="621" alt="image" src="https://github.com/user-attachments/assets/79d1adbe-46aa-40fb-bbc4-be521946caa7" />
 
-![Admin Users](docs/screenshots/admin_users.png)
-*Screenshot: User management*
 
-![Admin Educational](docs/screenshots/admin_educational.png)
-*Screenshot: Educational content management*
+[Admin Users]
+<img width="1358" height="626" alt="image" src="https://github.com/user-attachments/assets/bba0281e-21ae-4ddb-b068-3961c0c7d4b9" />
+
+
+[Admin Educational]
+<img width="1365" height="630" alt="image" src="https://github.com/user-attachments/assets/be00426e-afc6-40db-8c25-5205486984b7" />
 
 ---
 
