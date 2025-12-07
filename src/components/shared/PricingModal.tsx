@@ -438,7 +438,36 @@ export function PricingModal({
                     <Sparkles className="h-5 w-5 text-[#F59E0B]" />
                     Insight AI
                   </h4>
-                  <p className="text-[#0C4A6E] leading-relaxed">{data.pricing_insight}</p>
+                  <div className="text-[#0C4A6E] leading-relaxed space-y-3">
+                    {data.pricing_insight.split('\n').map((line, idx) => {
+                      // Remove markdown syntax
+                      let cleanLine = line
+                        .replace(/#{1,6}\s/g, '') // Remove headers
+                        .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
+                        .replace(/\*([^*]+)\*/g, '$1') // Remove italic
+                        .replace(/`([^`]+)`/g, '$1') // Remove code
+                        .replace(/^\s*[-*+]\s/g, '• ') // Convert list markers to bullets
+                        .replace(/^\s*\d+\.\s/g, (match) => match.replace(/\d+/, (num) => `${num}.`)) // Keep numbered lists
+                        .trim()
+                      
+                      if (!cleanLine) return null
+                      
+                      // Check if it's a bullet point
+                      const isBullet = cleanLine.startsWith('•')
+                      const isNumbered = /^\d+\./.test(cleanLine)
+                      
+                      return (
+                        <p 
+                          key={idx} 
+                          className={`${isBullet || isNumbered ? 'pl-4' : ''} ${
+                            cleanLine.length < 50 && !isBullet && !isNumbered ? 'font-semibold text-[#0C4A6E]' : ''
+                          }`}
+                        >
+                          {cleanLine}
+                        </p>
+                      )
+                    }).filter(Boolean)}
+                  </div>
                 </div>
               )}
             </div>

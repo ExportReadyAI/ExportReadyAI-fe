@@ -237,7 +237,9 @@ export function MarketIntelligenceModal({
                           <span className="font-bold">{country.score}</span>
                         </div>
                       </div>
-                      <p className="text-sm text-[#0284C7] mb-3">{country.reason}</p>
+                      <p className="text-sm text-[#0284C7] mb-3">
+                        {country.reason.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
+                      </p>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="flex items-center gap-2">
                           <BarChart3 className="h-4 w-4 text-[#7DD3FC]" />
@@ -255,7 +257,7 @@ export function MarketIntelligenceModal({
                       {country.entry_strategy && (
                         <div className="mt-3 p-3 bg-[#F0F9FF] rounded-lg">
                           <p className="text-sm text-[#0284C7]">
-                            <strong>Strategi Masuk:</strong> {country.entry_strategy}
+                            <strong>Strategi Masuk:</strong> {country.entry_strategy.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
                           </p>
                         </div>
                       )}
@@ -281,7 +283,9 @@ export function MarketIntelligenceModal({
                         <div>
                           <span className="font-bold text-[#0C4A6E]">{country.country}</span>
                           <span className="text-[#7DD3FC] ml-2">({country.country_code})</span>
-                          <p className="text-sm text-[#0284C7] mt-1">{country.reason}</p>
+                          <p className="text-sm text-[#0284C7] mt-1">
+                            {country.reason.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -300,7 +304,9 @@ export function MarketIntelligenceModal({
                     {data.market_trends.map((trend, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <ArrowRight className="h-4 w-4 text-[#7DD3FC] flex-shrink-0 mt-1" />
-                        <span className="text-[#0C4A6E]">{trend}</span>
+                        <span className="text-[#0C4A6E]">
+                          {trend.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -314,7 +320,19 @@ export function MarketIntelligenceModal({
                     <BarChart3 className="h-5 w-5 text-[#F59E0B]" />
                     Lanskap Kompetitif
                   </h4>
-                  <p className="text-[#0284C7]">{data.competitive_landscape}</p>
+                  <div className="text-[#0284C7] leading-relaxed space-y-2">
+                    {data.competitive_landscape.split('\n').map((line, idx) => {
+                      const cleanLine = line
+                        .replace(/#{1,6}\s/g, '')
+                        .replace(/\*\*([^*]+)\*\*/g, '$1')
+                        .replace(/\*([^*]+)\*/g, '$1')
+                        .replace(/`([^`]+)`/g, '$1')
+                        .replace(/^\s*[-*+]\s/g, '• ')
+                        .trim()
+                      if (!cleanLine) return null
+                      return <p key={idx}>{cleanLine}</p>
+                    }).filter(Boolean)}
+                  </div>
                 </div>
               )}
 
@@ -329,7 +347,9 @@ export function MarketIntelligenceModal({
                     {data.growth_opportunities.map((opportunity, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-[#F59E0B] flex-shrink-0 mt-1" />
-                        <span className="text-[#0C4A6E]">{opportunity}</span>
+                        <span className="text-[#0C4A6E]">
+                          {opportunity.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -347,7 +367,9 @@ export function MarketIntelligenceModal({
                     {data.risks_and_challenges.map((risk, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 text-[#6366F1] flex-shrink-0 mt-1" />
-                        <span className="text-[#0C4A6E]">{risk}</span>
+                        <span className="text-[#0C4A6E]">
+                          {risk.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -361,7 +383,19 @@ export function MarketIntelligenceModal({
                     <Sparkles className="h-5 w-5 text-[#0284C7]" />
                     Rekomendasi AI
                   </h4>
-                  <p className="text-[#0284C7] font-medium">{data.overall_recommendation}</p>
+                  <div className="text-[#0284C7] font-medium leading-relaxed space-y-2">
+                    {data.overall_recommendation.split('\n').map((line, idx) => {
+                      const cleanLine = line
+                        .replace(/#{1,6}\s/g, '')
+                        .replace(/\*\*([^*]+)\*\*/g, '$1')
+                        .replace(/\*([^*]+)\*/g, '$1')
+                        .replace(/`([^`]+)`/g, '$1')
+                        .replace(/^\s*[-*+]\s/g, '• ')
+                        .trim()
+                      if (!cleanLine) return null
+                      return <p key={idx}>{cleanLine}</p>
+                    }).filter(Boolean)}
+                  </div>
                 </div>
               )}
             </div>
