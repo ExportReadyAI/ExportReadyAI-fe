@@ -258,13 +258,25 @@ export const exportAnalysisService = {
     get<ExportAnalysis>(API_ENDPOINTS.exportAnalysis.detail(id)),
   
   create: (data: CreateExportAnalysisRequest) =>
-    post<ExportAnalysis>(API_ENDPOINTS.exportAnalysis.create, data),
+    post<ExportAnalysis>(
+      API_ENDPOINTS.exportAnalysis.create,
+      data,
+      {
+        timeout: 300000, // 5 minutes (300 seconds) for AI processing
+      }
+    ),
   
   delete: (id: string | number) =>
     del<{ message: string }>(API_ENDPOINTS.exportAnalysis.delete(id)),
   
   reanalyze: (id: string | number) =>
-    post<ExportAnalysis>(API_ENDPOINTS.exportAnalysis.reanalyze(id)),
+    post<ExportAnalysis>(
+      API_ENDPOINTS.exportAnalysis.reanalyze(id),
+      undefined,
+      {
+        timeout: 300000, // 5 minutes for AI processing
+      }
+    ),
   
   compare: (data: CompareCountriesRequest) =>
     post<CompareCountriesResponse>(API_ENDPOINTS.exportAnalysis.compare, data),

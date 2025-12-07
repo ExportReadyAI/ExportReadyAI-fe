@@ -173,10 +173,25 @@ export default function CreateExportAnalysisPage() {
         setError(response.message || "Gagal membuat analisis")
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-        "Terjadi kesalahan saat membuat analisis"
-      )
+      // Check if it's a timeout error
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        setError(
+          "Proses analisis memakan waktu lebih lama dari yang diharapkan. " +
+          "Silakan periksa kembali halaman Export Analysis dalam beberapa saat. " +
+          "Analisis mungkin sedang diproses di background."
+        )
+      } else if (err.response?.status === 504 || err.response?.statusText === 'Gateway Timeout') {
+        setError(
+          "Backend sedang memproses analisis. " +
+          "Silakan tunggu beberapa saat dan periksa kembali halaman Export Analysis. " +
+          "Data mungkin sudah tersimpan."
+        )
+      } else {
+        setError(
+          err.response?.data?.message ||
+          "Terjadi kesalahan saat membuat analisis"
+        )
+      }
     } finally {
       setAnalyzing(false)
     }

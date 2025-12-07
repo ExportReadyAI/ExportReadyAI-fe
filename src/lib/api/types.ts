@@ -31,6 +31,7 @@ export interface PaginatedResponse<T> {
 export interface ApiRequestConfig {
   params?: Record<string, any>;
   headers?: Record<string, string>;
+  timeout?: number;
 }
 
 // User Types
