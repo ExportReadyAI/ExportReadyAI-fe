@@ -27,7 +27,7 @@ import type { Catalog, Product } from "@/lib/api/types"
 
 export default function CatalogsPage() {
   const router = useRouter()
-  const { isAdmin } = useAuthStore()
+  const { isAdmin, isUMKM, isBuyer } = useAuthStore()
   const [catalogs, setCatalogs] = useState<Catalog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -51,8 +51,28 @@ export default function CatalogsPage() {
       return
     }
 
+    // Redirect buyer to their buyer-requests page
+    if (isBuyer()) {
+      router.push("/buyer-requests")
+      return
+    }
+
     fetchCatalogs()
   }, [mounted, router, page])
+
+  // Refetch catalogs when page becomes visible (after returning from detail page)
+  useEffect(() => {
+    if (!mounted) return
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCatalogs()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [mounted])
 
   const fetchCatalogs = async () => {
     try {
@@ -267,7 +287,7 @@ export default function CatalogsPage() {
                       </div>
 
                       {/* AI Description Status */}
-                      {catalog.export_description ? (
+                      {catalog.has_ai_description ? (
                         <div className="flex items-center gap-2 text-xs text-[#22C55E] mb-4">
                           <Sparkles className="h-4 w-4" />
                           <span className="font-medium">AI Description Ready</span>

@@ -27,7 +27,7 @@ import { WhatsAppDialog } from "@/components/shared/WhatsAppDialog"
 export default function BuyerDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, isUMKM, isBuyer, isAdmin } = useAuthStore()
   const [buyer, setBuyer] = useState<BuyerProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -58,10 +58,33 @@ export default function BuyerDetailPage() {
       setError(null)
 
       const response = await buyerProfileService.get(buyerId)
-      const buyerData = (response as any).success ? (response as any).data : response
-      setBuyer(buyerData as BuyerProfile)
+      
+      // Handle different response formats
+      let buyerData: BuyerProfile | null = null
+      
+      if (response && typeof response === 'object') {
+        if ('success' in response && (response as any).success) {
+          buyerData = (response as any).data
+        } else if ('id' in response) {
+          buyerData = response as BuyerProfile
+        } else {
+          console.error('Unexpected response format:', response)
+          throw new Error('Format respons tidak valid')
+        }
+      }
+      
+      if (!buyerData) {
+        throw new Error('Data buyer tidak ditemukan')
+      }
+      
+      setBuyer(buyerData)
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Gagal memuat buyer profile")
+      console.error('Error fetching buyer:', err)
+      const errorMessage = err.response?.data?.detail || 
+                          err.response?.data?.message || 
+                          err.message || 
+                          "Gagal memuat buyer profile"
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

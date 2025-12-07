@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { useAuthStore } from "@/lib/stores/auth.store"
 import { catalogService } from "@/lib/api/services"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Button } from "@/components/ui/button"
@@ -33,6 +34,7 @@ import type { Catalog } from "@/lib/api/types"
 export default function CatalogDetailPage() {
   const router = useRouter()
   const params = useParams()
+  const { isBuyer } = useAuthStore()
   const catalogId = params.id as string
 
   const [mounted, setMounted] = useState(false)
@@ -55,6 +57,7 @@ export default function CatalogDetailPage() {
       return
     }
 
+    // Allow buyers to view catalog details (read-only from matched UMKM)
     fetchCatalog()
   }, [mounted, router, catalogId])
 
@@ -79,7 +82,14 @@ export default function CatalogDetailPage() {
         setError("Katalog tidak ditemukan")
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Gagal memuat katalog")
+      console.error('Catalog fetch error:', err)
+      
+      // Handle 403 Forbidden for buyers
+      if (err.response?.status === 403) {
+        setError("Maaf, Anda tidak memiliki akses untuk melihat detail katalog ini. Silakan hubungi admin untuk informasi lebih lanjut.")
+      } else {
+        setError(err.response?.data?.message || err.response?.data?.detail || "Gagal memuat katalog")
+      }
     } finally {
       setLoading(false)
     }
@@ -132,11 +142,11 @@ export default function CatalogDetailPage() {
             </Alert>
             <Button
               variant="outline"
-              onClick={() => router.push("/catalogs")}
+              onClick={() => router.push(isBuyer() ? "/buyer-requests" : "/catalogs")}
               className="mt-4"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke Katalog
+              {isBuyer() ? "Kembali ke Buyer Requests" : "Kembali ke Katalog"}
             </Button>
           </div>
         </main>
@@ -155,11 +165,11 @@ export default function CatalogDetailPage() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => router.push("/catalogs")}
+              onClick={() => router.push(isBuyer() ? "/buyer-requests" : "/catalogs")}
               className="mb-4 text-[#0284C7] hover:text-[#0369a1] hover:bg-[#e0f2fe]"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke Katalog
+              {isBuyer() ? "Kembali ke Buyer Requests" : "Kembali ke Katalog"}
             </Button>
 
             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
@@ -191,29 +201,32 @@ export default function CatalogDetailPage() {
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleTogglePublish}
-                  disabled={publishing}
-                >
-                  {publishing ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : catalog.is_published ? (
-                    <EyeOff className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Globe className="mr-2 h-4 w-4" />
-                  )}
-                  {catalog.is_published ? "Unpublish" : "Publish"}
-                </Button>
-                <Button
-                  onClick={() => router.push(`/catalogs/${catalogId}/edit`)}
-                  className="bg-[#8B5CF6] hover:bg-[#7c3aed] shadow-[0_4px_0_0_#6d28d9]"
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Katalog
-                </Button>
-              </div>
+              {/* Hide Edit/Publish buttons from buyers (read-only access) */}
+              {!isBuyer() && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleTogglePublish}
+                    disabled={publishing}
+                  >
+                    {publishing ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : catalog.is_published ? (
+                      <EyeOff className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Globe className="mr-2 h-4 w-4" />
+                    )}
+                    {catalog.is_published ? "Unpublish" : "Publish"}
+                  </Button>
+                  <Button
+                    onClick={() => router.push(`/catalogs/${catalogId}/edit`)}
+                    className="bg-[#8B5CF6] hover:bg-[#7c3aed] shadow-[0_4px_0_0_#6d28d9]"
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Katalog
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
