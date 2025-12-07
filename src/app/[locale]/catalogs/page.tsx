@@ -60,6 +60,20 @@ export default function CatalogsPage() {
     fetchCatalogs()
   }, [mounted, router, page])
 
+  // Refetch catalogs when page becomes visible (after returning from detail page)
+  useEffect(() => {
+    if (!mounted) return
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCatalogs()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [mounted])
+
   const fetchCatalogs = async () => {
     try {
       setLoading(true)
@@ -273,7 +287,7 @@ export default function CatalogsPage() {
                       </div>
 
                       {/* AI Description Status */}
-                      {catalog.export_description ? (
+                      {catalog.has_ai_description ? (
                         <div className="flex items-center gap-2 text-xs text-[#22C55E] mb-4">
                           <Sparkles className="h-4 w-4" />
                           <span className="font-medium">AI Description Ready</span>

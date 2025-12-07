@@ -832,6 +832,7 @@ export interface Catalog {
   variants?: CatalogVariant[]; // Legacy
   primary_image?: string;
   variant_count?: number;
+  has_ai_description?: boolean; // Indicates if catalog has AI-generated description
   published_at?: string;
   created_at: string;
   updated_at: string;
