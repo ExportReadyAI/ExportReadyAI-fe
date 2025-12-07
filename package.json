@@ -1,12 +1,16 @@
 {
-  "name": "fe",
-  "version": "0.1.0",
+  "name": "exportready-ai-frontend",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
