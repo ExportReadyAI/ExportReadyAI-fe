@@ -55,6 +55,7 @@ import type {
   UpdateEducationalModuleRequest,
   CreateEducationalArticleRequest,
   UpdateEducationalArticleRequest,
+  RegulationRecommendationsResponse,
   MarketIntelligence,
   CreateMarketIntelligenceRequest,
   ProductPricing,
@@ -204,7 +205,7 @@ export const productService = {
     post<Product>(API_ENDPOINTS.products.create, data),
   
   update: (id: string | number, data: UpdateProductRequest) =>
-    put<Product>(API_ENDPOINTS.products.update(id), data),
+    patch<Product>(API_ENDPOINTS.products.update(id), data),
   
   delete: (id: string | number) =>
     del<{ message: string }>(API_ENDPOINTS.products.delete(id)),
@@ -282,16 +283,17 @@ export const exportAnalysisService = {
     del<{ message: string }>(API_ENDPOINTS.exportAnalysis.delete(id)),
   
   reanalyze: (id: string | number) =>
-    post<ExportAnalysis>(
-      API_ENDPOINTS.exportAnalysis.reanalyze(id),
-      undefined,
-      {
-        timeout: 300000, // 5 minutes for AI processing
-      }
-    ),
+    post<ExportAnalysis>(API_ENDPOINTS.exportAnalysis.reanalyze(id), {}, { timeout: 180000 }), // 3 minutes for re-analyze
   
   compare: (data: CompareCountriesRequest) =>
     post<CompareCountriesResponse>(API_ENDPOINTS.exportAnalysis.compare, data),
+  
+  // NEW: Get detailed regulation recommendations
+  getRegulationRecommendations: (id: string | number, language: 'id' | 'en' = 'id') =>
+    get<RegulationRecommendationsResponse>(
+      API_ENDPOINTS.exportAnalysis.regulationRecommendations(id),
+      { headers: { 'Accept-Language': language } }
+    ),
 };
 
 // ==================== Costing Services ====================

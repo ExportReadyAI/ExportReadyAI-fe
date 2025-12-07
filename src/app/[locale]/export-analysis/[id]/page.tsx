@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useAuthStore } from "@/lib/stores/auth.store"
-import { exportAnalysisService } from "@/lib/api/services"
+import { exportAnalysisService, productService } from "@/lib/api/services"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,11 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CircularProgress } from "@/components/shared/CircularProgress"
 import { DeleteAnalysisModal } from "@/components/shared/DeleteAnalysisModal"
 import { ReanalyzeModal } from "@/components/shared/ReanalyzeModal"
+import { ProductChangedAlert } from "@/components/shared/ProductChangedAlert"
+import { InlineComplianceEditor } from "@/components/shared/InlineComplianceEditor"
+import ReactMarkdown from "react-markdown"
 import {
   ArrowLeft,
   FileText,
   Globe,
-  Package,
   AlertTriangle,
   CheckCircle2,
   Info,
@@ -24,8 +26,9 @@ import {
   Trash2,
   Download,
   RefreshCw,
+  BookOpen,
 } from "lucide-react"
-import type { ExportAnalysis, ComplianceIssue } from "@/lib/api/types"
+import type { ExportAnalysis, Product } from "@/lib/api/types"
 
 export default function ExportAnalysisDetailPage() {
   const router = useRouter()
@@ -36,8 +39,51 @@ export default function ExportAnalysisDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [reanalyzeModalOpen, setReanalyzeModalOpen] = useState(false)
+  const [reanalyzing, setReanalyzing] = useState(false)
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null)
 
   const analysisId = params?.id as string
+
+  const fetchProductData = async (productId: number) => {
+    try {
+      const response = await productService.get(productId)
+      const productData = 'data' in response ? (response as { data: Product }).data : response
+      setCurrentProduct(productData)
+    } catch (err) {
+      console.error('Failed to fetch product:', err)
+    }
+  }
+
+  const fetchAnalysis = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await exportAnalysisService.get(analysisId)
+
+      if (response && typeof response === 'object') {
+        if ('success' in response && (response as { success: boolean; data: ExportAnalysis }).success) {
+          const analysisData = (response as { success: boolean; data: ExportAnalysis }).data
+          setAnalysis(analysisData)
+          // Fetch product data
+          const productId = analysisData?.product || analysisData?.product_id
+          if (productId) {
+            await fetchProductData(productId)
+          }
+        } else {
+          setAnalysis(response as ExportAnalysis)
+          // Fetch product data
+          if ((response as ExportAnalysis)?.product || (response as ExportAnalysis)?.product_id) {
+            await fetchProductData((response as ExportAnalysis).product || (response as ExportAnalysis).product_id!)
+          }
+        }
+      }
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } }
+      setError(error.response?.data?.message || "Terjadi kesalahan")
+    } finally {
+      setLoading(false)
+    }
+  }, [analysisId])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -48,39 +94,23 @@ export default function ExportAnalysisDetailPage() {
     if (analysisId) {
       fetchAnalysis()
     }
-  }, [isAuthenticated, router, analysisId])
-
-  const fetchAnalysis = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await exportAnalysisService.get(analysisId)
-
-      if (response && typeof response === 'object') {
-        if ('success' in response && (response as any).success) {
-          setAnalysis((response as any).data)
-        } else {
-          setAnalysis(response as ExportAnalysis)
-        }
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Terjadi kesalahan")
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [isAuthenticated, router, analysisId, fetchAnalysis])
 
   const handleReanalyze = async () => {
     if (!analysis) return
 
     try {
+      setReanalyzing(true)
       const response = await exportAnalysisService.reanalyze(analysis.id)
       if (response.success && response.data) {
-        setAnalysis((response.data as any) || response.data)
+        setAnalysis(response.data || (response as unknown as { data: ExportAnalysis }).data)
         setReanalyzeModalOpen(false)
       }
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || "Gagal re-analyze")
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } }
+      throw new Error(error.response?.data?.message || "Gagal re-analyze")
+    } finally {
+      setReanalyzing(false)
     }
   }
 
@@ -90,9 +120,15 @@ export default function ExportAnalysisDetailPage() {
     try {
       await exportAnalysisService.delete(analysis.id)
       router.push("/export-analysis")
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || "Gagal menghapus analisis")
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } }
+      throw new Error(error.response?.data?.message || "Gagal menghapus analisis")
     }
+  }
+
+  // Helper: Get product ID (support both field names)
+  const getProductId = () => {
+    return analysis?.product || analysis?.product_id || 0
   }
 
   const getScoreColor = (score: number) => {
@@ -196,6 +232,13 @@ export default function ExportAnalysisDetailPage() {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
+                    onClick={() => router.push(`/export-analysis/${analysis.id}/regulation-recommendations`)}
+                  >
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Detail Rekomendasi
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => setReanalyzeModalOpen(true)}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
@@ -223,8 +266,17 @@ export default function ExportAnalysisDetailPage() {
             </Alert>
           )}
 
+          {/* Product Changed Warning */}
+          {analysis.product_changed && (
+            <ProductChangedAlert
+              productName={analysis.snapshot_product_name || analysis.product_name}
+              onReanalyze={() => setReanalyzeModalOpen(true)}
+              loading={reanalyzing}
+            />
+          )}
+
           {/* Score Section */}
-          <div className="bg-gradient-to-r from-[#0284C7] to-[#0369a1] rounded-3xl p-8 shadow-[0_6px_0_0_#064e7a] mb-6">
+          <div className="bg-linear-to-r from-[#0284C7] to-[#0369a1] rounded-3xl p-8 shadow-[0_6px_0_0_#064e7a] mb-6">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
               <div className="text-center lg:text-left">
                 <h2 className="text-2xl font-extrabold text-white mb-2">
@@ -250,39 +302,70 @@ export default function ExportAnalysisDetailPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Compliance Issues */}
-            <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe]">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-[#EF4444]" />
-                  Compliance Issues
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {analysis.compliance_issues && analysis.compliance_issues.length > 0 ? (
-                  <div className="space-y-3">
-                    {analysis.compliance_issues.map((issue, index) => (
-                      <div
-                        key={index}
-                        className="bg-[#F0F9FF] rounded-2xl p-4 border-2 border-[#e0f2fe]"
-                      >
-                        <div className="flex items-start gap-3">
-                          {getSeverityIcon(issue.severity)}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge variant={getSeverityBadgeVariant(issue.severity) as any}>
-                                {issue.severity}
-                              </Badge>
-                              <span className="text-sm font-bold text-[#0C4A6E]">
-                                {issue.type}
-                              </span>
-                            </div>
-                            <p className="text-sm text-[#0C4A6E] mb-2">
-                              {issue.description}
-                            </p>
-                            {issue.your_value && issue.required_value && (
-                              <div className="grid grid-cols-2 gap-2 text-xs">
+          {/* Compliance Issues & Product Editor */}
+          <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe] lg:col-span-2 mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-[#EF4444]" />
+                Compliance Issues & Product Editor
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!isAdmin() && currentProduct ? (
+                <div className="space-y-6">
+                  {/* Compliance Issues sebagai catatan/panduan */}
+                  {analysis.compliance_issues && analysis.compliance_issues.length > 0 && (
+                    <div className="bg-[#FEF3C7] border-2 border-[#F59E0B] rounded-2xl p-4">
+                      <h4 className="font-bold text-[#92400E] mb-2 flex items-center gap-2">
+                        <Info className="h-5 w-5" />
+                        Catatan: {analysis.compliance_issues.length} Issues Ditemukan
+                      </h4>
+                      <p className="text-sm text-[#92400E] mb-3">
+                        Gunakan daftar berikut sebagai panduan untuk mengedit atribut produk di bawah:
+                      </p>
+                      <ul className="space-y-1">
+                        {analysis.compliance_issues.map((issue, index) => (
+                          <li key={index} className="text-sm text-[#92400E] flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                            <span><strong>{issue.type}:</strong> {issue.description}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Full Product Editor */}
+                  <InlineComplianceEditor
+                    productId={getProductId()}
+                    complianceIssues={analysis.compliance_issues || []}
+                    currentProduct={currentProduct}
+                    onSaveComplete={fetchAnalysis}
+                  />
+                </div>
+              ) : analysis.compliance_issues && analysis.compliance_issues.length > 0 ? (
+                <div className="space-y-3">
+                  {analysis.compliance_issues.map((issue, index) => (
+                    <div
+                      key={index}
+                      className="bg-[#F0F9FF] rounded-2xl p-4 border-2 border-[#e0f2fe]"
+                    >
+                      <div className="flex items-start gap-3">
+                        {getSeverityIcon(issue.severity)}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant={getSeverityBadgeVariant(issue.severity) as "outline" | "destructive" | "accent"}>
+                              {issue.severity}
+                            </Badge>
+                            <span className="text-sm font-bold text-[#0C4A6E]">
+                              {issue.type}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[#0C4A6E] mb-2">
+                            {issue.description}
+                          </p>
+                          {issue.your_value && issue.required_value && (
+                            <>
+                              <div className="grid grid-cols-2 gap-2 text-xs mb-2">
                                 <div className="bg-white rounded-xl p-2">
                                   <p className="font-bold text-[#7DD3FC]">Your Value</p>
                                   <p className="font-bold text-[#0C4A6E]">{issue.your_value}</p>
@@ -292,21 +375,24 @@ export default function ExportAnalysisDetailPage() {
                                   <p className="font-bold text-[#0C4A6E]">{issue.required_value}</p>
                                 </div>
                               </div>
-                            )}
-                          </div>
+                            </>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <CheckCircle2 className="h-12 w-12 text-[#22C55E] mx-auto mb-3" />
-                    <p className="font-bold text-[#0C4A6E]">Tidak Ada Issues!</p>
-                    <p className="text-sm text-[#7DD3FC]">Produk memenuhi semua regulasi</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="h-12 w-12 text-[#22C55E] mx-auto mb-3" />
+                  <p className="font-bold text-[#0C4A6E]">Tidak Ada Issues!</p>
+                  <p className="text-sm text-[#7DD3FC]">Produk memenuhi semua regulasi</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-6 lg:grid-cols-1">
 
             {/* Recommendations */}
             <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe]">
@@ -319,14 +405,24 @@ export default function ExportAnalysisDetailPage() {
               <CardContent>
                 {analysis.recommendations ? (
                   <div className="bg-[#F0F9FF] rounded-2xl p-4">
-                    <div className="prose prose-sm max-w-none">
-                      <ol className="list-decimal list-inside space-y-2 text-[#0C4A6E]">
-                        {analysis.recommendations.split('\n').filter(line => line.trim()).map((rec, index) => (
-                          <li key={index} className="font-medium">
-                            {rec.trim()}
-                          </li>
-                        ))}
-                      </ol>
+                    <div className="prose prose-sm max-w-none text-[#0C4A6E]">
+                      <ReactMarkdown
+                        components={{
+                          h1: ({...props}) => <h1 className="text-xl font-bold text-[#0C4A6E] mb-3" {...props} />,
+                          h2: ({...props}) => <h2 className="text-lg font-bold text-[#0C4A6E] mb-2" {...props} />,
+                          h3: ({...props}) => <h3 className="text-base font-bold text-[#0284C7] mb-2" {...props} />,
+                          p: ({...props}) => <p className="text-sm text-[#0C4A6E] mb-2 leading-relaxed" {...props} />,
+                          ul: ({...props}) => <ul className="list-disc list-inside space-y-1 mb-3" {...props} />,
+                          ol: ({...props}) => <ol className="list-decimal list-inside space-y-1 mb-3" {...props} />,
+                          li: ({...props}) => <li className="text-sm text-[#0C4A6E] font-medium" {...props} />,
+                          strong: ({...props}) => <strong className="font-bold text-[#0369a1]" {...props} />,
+                          em: ({...props}) => <em className="italic text-[#0284C7]" {...props} />,
+                          code: ({...props}) => <code className="bg-[#E0F2FE] px-2 py-1 rounded text-xs font-mono text-[#0C4A6E]" {...props} />,
+                          blockquote: ({...props}) => <blockquote className="border-l-4 border-[#0284C7] pl-4 italic text-[#64748b]" {...props} />,
+                        }}
+                      >
+                        {analysis.recommendations}
+                      </ReactMarkdown>
                     </div>
                   </div>
                 ) : (

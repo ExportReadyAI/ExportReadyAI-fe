@@ -232,9 +232,59 @@ export interface ComplianceIssue {
   category: 'Ingredient' | 'Specification' | 'Packaging' | 'Labeling' | 'Other';
 }
 
+// Product Snapshot Type (captured at analysis time)
+export interface ProductSnapshot {
+  id: number;
+  name_local: string;
+  category_id: number;
+  category?: ProductCategory;
+  description_local: string;
+  material_composition: string;
+  production_technique: string;
+  finishing_type: string;
+  quality_specs: QualitySpecs;
+  durability_claim: string;
+  packaging_type: string;
+  dimensions_l_w_h: ProductDimensions;
+  weight_net: string;
+  weight_gross: string;
+  enrichment?: ProductEnrichment | null;
+  snapshot_created_at: string;
+  updated_at?: string;
+}
+
+// Regulation Recommendations Types
+export interface RegulationSection {
+  summary: string;
+  key_points: string[];
+  details?: string;
+}
+
+export interface RegulationRecommendations {
+  overview: RegulationSection;
+  prohibited_items: RegulationSection;
+  import_restrictions: RegulationSection;
+  certifications: RegulationSection;
+  labeling_requirements: RegulationSection;
+  customs_procedures: RegulationSection;
+  testing_inspection: RegulationSection;
+  intellectual_property: RegulationSection;
+  shipping_logistics: RegulationSection;
+  timeline_costs: RegulationSection;
+}
+
+export interface RegulationRecommendationsResponse {
+  analysis_id: number;
+  country_code: string;
+  product_name: string;
+  from_cache: boolean;
+  recommendations: RegulationRecommendations;
+}
+
 export interface ExportAnalysis {
   id: number;
-  product_id: number;
+  product: number; // Backend uses 'product' not 'product_id'
+  product_id?: number; // Alias for backward compatibility
   product_name: string;
   product_category?: string;
   product_material?: string;
@@ -249,6 +299,11 @@ export interface ExportAnalysis {
   analyzed_at: string;
   created_at: string;
   updated_at: string;
+  // NEW: Snapshot fields
+  product_snapshot?: ProductSnapshot;
+  snapshot_product_name?: string;
+  product_changed?: boolean;
+  regulation_recommendations_cache?: RegulationRecommendations | null;
 }
 
 export interface CreateExportAnalysisRequest {
