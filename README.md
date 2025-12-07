@@ -1645,7 +1645,7 @@ npm install
 
 ## Tim Pengembang
 
-**ExportReadyAI Team** - Hackathon 2024
+**ExportReadyAI Team** - Hackathon 2025
 
 ---
 
