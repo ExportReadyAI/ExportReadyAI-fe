@@ -12,7 +12,11 @@
   <em>"Your export journey, simplified by AI."</em>
 </p>
 
-
+<p align="center">
+  <a href="https://exportreadyai-fe-production.up.railway.app/en" target="_blank">
+    <strong>🌐 Live Production</strong>
+  </a>
+</p>
 
 ---
 
