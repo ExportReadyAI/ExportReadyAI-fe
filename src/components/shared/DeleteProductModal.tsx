@@ -17,6 +17,7 @@ interface DeleteProductModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: () => Promise<void>
+  onSuccess?: () => void
   productName?: string
 }
 
@@ -24,6 +25,7 @@ export function DeleteProductModal({
   open,
   onOpenChange,
   onConfirm,
+  onSuccess,
   productName,
 }: DeleteProductModalProps) {
   const [loading, setLoading] = useState(false)
@@ -35,6 +37,9 @@ export function DeleteProductModal({
 
     try {
       await onConfirm()
+      if (onSuccess) {
+        onSuccess()
+      }
       onOpenChange(false)
     } catch (err: any) {
       setError(err.message || "Gagal menghapus produk")

@@ -174,7 +174,6 @@ export function ProductDetailModal({
       const response = await productService.delete(product.id)
 
       if (response.success) {
-        onProductDeleted?.()
         onOpenChange(false)
       } else {
         throw new Error(response.message || "Gagal menghapus produk")
@@ -510,6 +509,9 @@ export function ProductDetailModal({
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
         onConfirm={handleDelete}
+        onSuccess={() => {
+          onProductDeleted?.()
+        }}
         productName={product?.name_local}
       />
     </>

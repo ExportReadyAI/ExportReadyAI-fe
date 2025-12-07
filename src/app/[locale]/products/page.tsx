@@ -26,6 +26,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [page, setPage] = useState(1)
@@ -39,6 +40,16 @@ export default function ProductsPage() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Auto-hide success message after 5 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [successMessage])
 
   useEffect(() => {
     if (!mounted) return // Wait for mount
@@ -203,6 +214,15 @@ export default function ProductsPage() {
           {error && (
             <Alert variant="destructive" className="mb-6">
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {successMessage && (
+            <Alert className="mb-6 bg-[#f0fdf4] border-[#22c55e] text-[#166534]">
+              <AlertDescription className="flex items-center gap-2">
+                <span className="text-xl">✅</span>
+                {successMessage}
+              </AlertDescription>
             </Alert>
           )}
 
@@ -405,6 +425,7 @@ export default function ProductsPage() {
               fetchProducts() // Refresh list after update
             }}
             onProductDeleted={() => {
+              setSuccessMessage("✅ Produk berhasil dihapus!")
               fetchProducts() // Refresh list after delete
             }}
           />
