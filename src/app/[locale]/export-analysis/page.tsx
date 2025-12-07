@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/lib/stores/auth.store"
-import { exportAnalysisService, countryService } from "@/lib/api/services"
+import { exportAnalysisService, countryService, productService } from "@/lib/api/services"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,8 @@ import {
   Globe,
   Filter
 } from "lucide-react"
+import { NoProductModal } from "@/components/shared/NoProductModal"
+import { ProductNotEnrichedModal } from "@/components/shared/ProductNotEnrichedModal"
 import type { ExportAnalysis, Country } from "@/lib/api/types"
 
 export default function ExportAnalysisPage() {
@@ -38,6 +40,8 @@ export default function ExportAnalysisPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [mounted, setMounted] = useState(false)
+  const [noProductModalOpen, setNoProductModalOpen] = useState(false)
+  const [notEnrichedModalOpen, setNotEnrichedModalOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -139,6 +143,45 @@ export default function ExportAnalysisPage() {
     return "Ready"
   }
 
+  const handleCreateAnalysis = async () => {
+    try {
+      // Check if user has any products
+      const response = await productService.list({ limit: 1 })
+      
+      let productsData: any[] = []
+      if (response && typeof response === 'object') {
+        if ('success' in response && (response as any).success) {
+          productsData = Array.isArray((response as any).data) 
+            ? (response as any).data 
+            : (response as any).data?.results || []
+        } else if (Array.isArray(response)) {
+          productsData = response
+        } else if ('results' in response) {
+          productsData = (response as any).results || []
+        }
+      }
+
+      if (productsData.length === 0) {
+        setNoProductModalOpen(true)
+        return
+      }
+
+      // Check if any product is enriched
+      const hasEnrichedProduct = productsData.some(p => p.is_enriched)
+      if (!hasEnrichedProduct) {
+        setNotEnrichedModalOpen(true)
+        return
+      }
+
+      // If validation passes, go to create page
+      router.push("/export-analysis/create")
+    } catch (err) {
+      console.error("Error checking products:", err)
+      // If error, still allow to proceed
+      router.push("/export-analysis/create")
+    }
+  }
+
   const getStatusBadgeVariant = (grade: string) => {
     if (grade === "Ready") return "success"
     if (grade === "Warning") return "accent"
@@ -190,7 +233,7 @@ export default function ExportAnalysisPage() {
             {!isAdmin() && (
               <Button 
                 size="lg"
-                onClick={() => router.push("/export-analysis/create")}
+                onClick={handleCreateAnalysis}
                 className="shadow-[0_4px_0_0_#065985]"
               >
                 <Plus className="mr-2 h-5 w-5" />
@@ -384,6 +427,17 @@ export default function ExportAnalysisPage() {
               </div>
             </>
           )}
+
+          {/* Modals */}
+          <NoProductModal
+            open={noProductModalOpen}
+            onOpenChange={setNoProductModalOpen}
+          />
+
+          <ProductNotEnrichedModal
+            open={notEnrichedModalOpen}
+            onOpenChange={setNotEnrichedModalOpen}
+          />
         </div>
       </main>
     </div>

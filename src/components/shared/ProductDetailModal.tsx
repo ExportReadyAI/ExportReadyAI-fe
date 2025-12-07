@@ -196,7 +196,7 @@ export function ProductDetailModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl bg-[#F0F9FF]">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-[#F0F9FF]">
           <DialogHeader className="pb-4 border-b-2 border-[#e0f2fe]">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F59E0B] shadow-[0_4px_0_0_#d97706]">

@@ -22,6 +22,8 @@ import {
   CheckCircle2,
   AlertCircle
 } from "lucide-react"
+import { NoProductModal } from "@/components/shared/NoProductModal"
+import { ProductNotEnrichedModal } from "@/components/shared/ProductNotEnrichedModal"
 import type { Product, Country, CountryDetail } from "@/lib/api/types"
 
 export default function CreateExportAnalysisPage() {
@@ -41,6 +43,8 @@ export default function CreateExportAnalysisPage() {
   const [analyzing, setAnalyzing] = useState(false)
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [loadingCountries, setLoadingCountries] = useState(true)
+  const [noProductModalOpen, setNoProductModalOpen] = useState(false)
+  const [notEnrichedModalOpen, setNotEnrichedModalOpen] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -73,6 +77,15 @@ export default function CreateExportAnalysisPage() {
       // Filter only products with enrichment
       const enrichedProducts = productsData.filter(p => p.enrichment && p.enrichment.hs_code_recommendation)
       setProducts(enrichedProducts)
+      
+      // Check if no products at all
+      if (productsData.length === 0) {
+        setNoProductModalOpen(true)
+      } 
+      // Check if no enriched products
+      else if (enrichedProducts.length === 0) {
+        setNotEnrichedModalOpen(true)
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "Gagal memuat produk")
     } finally {
@@ -374,6 +387,17 @@ export default function CreateExportAnalysisPage() {
               </Button>
             </div>
           </form>
+
+          {/* Modals */}
+          <NoProductModal
+            open={noProductModalOpen}
+            onOpenChange={setNoProductModalOpen}
+          />
+
+          <ProductNotEnrichedModal
+            open={notEnrichedModalOpen}
+            onOpenChange={setNotEnrichedModalOpen}
+          />
         </div>
       </main>
     </div>
