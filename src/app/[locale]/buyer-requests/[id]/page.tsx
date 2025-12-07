@@ -21,6 +21,9 @@ import {
   Mail,
   Phone,
   Edit,
+  DollarSign,
+  Clock,
+  Image as ImageIcon,
 } from "lucide-react"
 import type { BuyerRequest, MatchedUMKM } from "@/lib/api/types"
 
@@ -254,33 +257,133 @@ export default function BuyerRequestDetailPage() {
                       Belum ada UMKM yang match dengan kriteria Anda
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {matchedUMKM.map((umkm) => (
-                        <Card key={umkm.umkm_id} className="border-2 border-[#e0f2fe]">
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
+                        <Card key={umkm.umkm_id} className="border-2 border-[#e0f2fe] shadow-sm hover:shadow-md transition-shadow">
+                          <CardContent className="p-6">
+                            {/* Header with Company Info */}
+                            <div className="flex items-start justify-between mb-4 pb-4 border-b border-[#e0f2fe]">
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h4 className="font-bold text-[#0C4A6E]">{umkm.company_name}</h4>
-                                  <Badge className="bg-[#F59E0B] text-white">
-                                    Match: {umkm.match_score}%
-                                  </Badge>
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h4 className="text-xl font-extrabold text-[#0C4A6E]">{umkm.company_name}</h4>
+                                  {umkm.match && (
+                                    <Badge className="bg-[#22C55E] text-white text-sm font-bold px-3 py-1">
+                                      Matched
+                                    </Badge>
+                                  )}
                                 </div>
-                                <div className="space-y-1 text-sm text-gray-600">
+                                {umkm.full_name && (
+                                  <p className="text-sm text-gray-600 mb-2">Contact: {umkm.full_name}</p>
+                                )}
+                                <div className="flex flex-wrap gap-3 text-sm text-gray-600">
                                   {umkm.email && (
                                     <div className="flex items-center gap-1">
-                                      <Mail className="h-3 w-3" />
+                                      <Mail className="h-4 w-4" />
                                       <span>{umkm.email}</span>
                                     </div>
                                   )}
-                                  {umkm.contact_info && (
+                                  {umkm.contact_info?.phone && (
                                     <div className="flex items-center gap-1">
-                                      <Phone className="h-3 w-3" />
-                                      <span>{umkm.contact_info}</span>
+                                      <Phone className="h-4 w-4" />
+                                      <span>{umkm.contact_info.phone}</span>
+                                    </div>
+                                  )}
+                                  {umkm.contact_info?.address && (
+                                    <div className="flex items-center gap-1">
+                                      <Globe className="h-4 w-4" />
+                                      <span className="line-clamp-1">{umkm.contact_info.address}</span>
                                     </div>
                                   )}
                                 </div>
                               </div>
+                            </div>
+
+                            {/* Catalog Information */}
+                            <div className="mb-4">
+                              <div className="flex items-start gap-4">
+                                {umkm.catalog.primary_image_url && (
+                                  <div className="flex-shrink-0">
+                                    <img
+                                      src={umkm.catalog.primary_image_url}
+                                      alt={umkm.catalog.display_name}
+                                      className="w-24 h-24 object-cover rounded-xl border-2 border-[#e0f2fe]"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none'
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex-1">
+                                  <h5 className="font-bold text-lg text-[#0C4A6E] mb-2">{umkm.catalog.display_name}</h5>
+                                  {umkm.catalog.export_description && (
+                                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                                      {umkm.catalog.export_description}
+                                    </p>
+                                  )}
+                                  {umkm.catalog.tags && umkm.catalog.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      {umkm.catalog.tags.slice(0, 5).map((tag, idx) => (
+                                        <Badge key={idx} variant="outline" className="text-xs">
+                                          {tag}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Pricing & Details Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-4 bg-[#F0F9FF] rounded-xl">
+                              <div>
+                                <Label className="text-[#0284C7] font-bold text-xs flex items-center gap-1 mb-1">
+                                  <DollarSign className="h-3 w-3" />
+                                  EXW Price
+                                </Label>
+                                <p className="text-[#0C4A6E] font-bold">${umkm.catalog.base_price_exw.toFixed(2)}</p>
+                                {umkm.catalog.base_price_fob && (
+                                  <p className="text-xs text-gray-500">FOB: ${umkm.catalog.base_price_fob.toFixed(2)}</p>
+                                )}
+                                {umkm.catalog.base_price_cif && (
+                                  <p className="text-xs text-gray-500">CIF: ${umkm.catalog.base_price_cif.toFixed(2)}</p>
+                                )}
+                              </div>
+                              <div>
+                                <Label className="text-[#0284C7] font-bold text-xs flex items-center gap-1 mb-1">
+                                  <Package className="h-3 w-3" />
+                                  MOQ
+                                </Label>
+                                <p className="text-[#0C4A6E] font-bold">
+                                  {umkm.catalog.min_order_quantity.toLocaleString()} {umkm.catalog.unit_type}
+                                </p>
+                              </div>
+                              <div>
+                                <Label className="text-[#0284C7] font-bold text-xs flex items-center gap-1 mb-1">
+                                  <Clock className="h-3 w-3" />
+                                  Lead Time
+                                </Label>
+                                <p className="text-[#0C4A6E] font-bold">{umkm.catalog.lead_time_days} days</p>
+                              </div>
+                              {umkm.catalog.available_stock !== undefined && (
+                                <div>
+                                  <Label className="text-[#0284C7] font-bold text-xs flex items-center gap-1 mb-1">
+                                    <TrendingUp className="h-3 w-3" />
+                                    Stock
+                                  </Label>
+                                  <p className="text-[#0C4A6E] font-bold">{umkm.catalog.available_stock.toLocaleString()}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="mt-4 pt-4 border-t border-[#e0f2fe]">
+                              <Button
+                                onClick={() => router.push(`/catalogs/${umkm.catalog.id}`)}
+                                className="w-full bg-[#0284C7] hover:bg-[#0369a1] shadow-[0_4px_0_0_#065985]"
+                              >
+                                <Package className="mr-2 h-4 w-4" />
+                                View Full Catalog
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>

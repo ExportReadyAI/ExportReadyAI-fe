@@ -27,6 +27,10 @@ import {
   Settings,
   CheckCircle,
   AlertCircle,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
+  Star,
 } from "lucide-react"
 import type { Product, CreateCatalogRequest, AIDescriptionResponse, CatalogTechnicalSpecs, CatalogSafetyInfo } from "@/lib/api/types"
 
@@ -58,6 +62,9 @@ export default function CreateCatalogPage() {
   const [generatingAI, setGeneratingAI] = useState(false)
   const [aiGenerated, setAiGenerated] = useState(false)
 
+  // Image upload state
+  const [selectedImages, setSelectedImages] = useState<Array<{ file: File; preview: string; altText: string }>>([])
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -73,6 +80,13 @@ export default function CreateCatalogPage() {
 
     fetchProducts()
   }, [mounted, router])
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      selectedImages.forEach(img => URL.revokeObjectURL(img.preview))
+    }
+  }, [selectedImages])
 
   const fetchProducts = async () => {
     try {
@@ -125,6 +139,60 @@ export default function CreateCatalogPage() {
         setDisplayName(selectedProduct.name_local)
       }
     }
+  }
+
+  // Image upload handlers
+  const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon', 'image/heic', 'image/heif']
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    const newImages: Array<{ file: File; preview: string; altText: string }> = []
+
+    Array.from(files).forEach((file) => {
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        setError(`File ${file.name} melebihi batas 10MB dan akan dilewati`)
+        return
+      }
+
+      // Validate file type
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setError(`File ${file.name} bukan format gambar yang didukung`)
+        return
+      }
+
+      const preview = URL.createObjectURL(file)
+      // First image is automatically primary
+      const isFirstImage = selectedImages.length === 0 && newImages.length === 0
+      newImages.push({ file, preview, altText: '', isPrimary: isFirstImage })
+    })
+
+    setSelectedImages([...selectedImages, ...newImages])
+    e.target.value = '' // Reset input
+  }
+
+  const handleRemoveImage = (index: number) => {
+    const newImages = selectedImages.filter((_, i) => i !== index)
+    // Revoke object URL to prevent memory leak
+    URL.revokeObjectURL(selectedImages[index].preview)
+    setSelectedImages(newImages)
+  }
+
+  const handleImageAltTextChange = (index: number, altText: string) => {
+    const newImages = [...selectedImages]
+    newImages[index].altText = altText
+    setSelectedImages(newImages)
+  }
+
+  const handleTogglePrimaryNewImage = (index: number) => {
+    const newImages = selectedImages.map((img, i) => ({
+      ...img,
+      isPrimary: i === index
+    }))
+    setSelectedImages(newImages)
   }
 
   const handleGenerateAI = async () => {
@@ -208,6 +276,63 @@ export default function CreateCatalogPage() {
       setSaving(true)
       setError(null)
 
+      // If images are selected, use FormData
+      if (selectedImages.length > 0) {
+        const formData = new FormData()
+        
+        // Add basic fields
+        formData.append('product_id', productId)
+        formData.append('display_name', displayName.trim())
+        formData.append('base_price_exw', basePriceExw)
+        formData.append('min_order_quantity', minOrderQuantity || '1')
+        formData.append('unit_type', unitType)
+        formData.append('lead_time_days', leadTimeDays || '14')
+        
+        // Add tags
+        tags.forEach((tag, index) => {
+          formData.append(`tags[${index}]`, tag)
+        })
+
+        // Add AI description fields if filled
+        if (exportDescription.trim()) {
+          formData.append('export_description', exportDescription.trim())
+        }
+        if (Object.keys(technicalSpecs).length > 0) {
+          formData.append('technical_specs', JSON.stringify(technicalSpecs))
+        }
+        if (Object.keys(safetyInfo).length > 0) {
+          formData.append('safety_info', JSON.stringify(safetyInfo))
+        }
+
+        // Add images
+        selectedImages.forEach((img, index) => {
+          formData.append('images[]', img.file)
+          if (img.altText.trim()) {
+            formData.append(`alt_text_${index}`, img.altText.trim())
+          }
+        })
+
+        const response = await catalogService.create(formData)
+
+        let catalogId: number | null = null
+
+        if (response && typeof response === 'object') {
+          if ('success' in response && (response as any).success) {
+            catalogId = (response as any).data?.id
+          } else if ('id' in response) {
+            catalogId = (response as any).id
+          }
+        }
+
+        if (catalogId) {
+          router.push(`/catalogs/${catalogId}`)
+        } else {
+          router.push("/catalogs")
+        }
+        return
+      }
+
+      // Otherwise, use regular JSON request
       const data: CreateCatalogRequest & {
         export_description?: string
         technical_specs?: CatalogTechnicalSpecs
@@ -707,6 +832,93 @@ export default function CreateCatalogPage() {
                     className="mt-1 bg-white"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Image Upload */}
+            <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe] mb-6">
+              <h2 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-4">
+                <ImageIcon className="h-5 w-5 text-[#8B5CF6]" />
+                Upload Gambar Produk
+              </h2>
+              <p className="text-sm text-[#7DD3FC] mb-4">
+                Upload gambar produk untuk katalog. Maksimal 10MB per gambar. Format: JPG, PNG, GIF, WebP, SVG, BMP, TIFF, ICO, HEIC, HEIF
+              </p>
+
+              <div className="space-y-4">
+                {/* File Input */}
+                <div className="relative">
+                  <input
+                    type="file"
+                    id="image-upload"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                    className="w-full border-2 border-dashed border-[#0284C7] hover:bg-[#F0F9FF]"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Pilih Gambar
+                  </Button>
+                </div>
+
+                {/* Image Preview Grid */}
+                {selectedImages.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedImages.map((img, index) => (
+                      <div key={index} className="relative group border-2 border-[#e0f2fe] rounded-xl overflow-hidden bg-white">
+                        <div className="aspect-square relative">
+                          <img
+                            src={img.preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {img.isPrimary && (
+                            <div className="absolute top-2 left-2 bg-[#F59E0B] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                              <Star className="h-3 w-3 fill-white" />
+                              Utama
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePrimaryNewImage(index)}
+                              className={`rounded-full p-1.5 ${
+                                img.isPrimary
+                                  ? 'bg-[#F59E0B] text-white'
+                                  : 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                              }`}
+                              title={img.isPrimary ? "Gambar utama" : "Set sebagai utama"}
+                            >
+                              <Star className={`h-4 w-4 ${img.isPrimary ? 'fill-white' : ''}`} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(index)}
+                              className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="p-2">
+                          <Input
+                            type="text"
+                            placeholder="Alt text (opsional)"
+                            value={img.altText}
+                            onChange={(e) => handleImageAltTextChange(index, e.target.value)}
+                            className="text-xs"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

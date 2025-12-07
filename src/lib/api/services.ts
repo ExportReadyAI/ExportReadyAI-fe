@@ -494,11 +494,23 @@ export const catalogService = {
   get: (id: string | number) =>
     get<Catalog>(API_ENDPOINTS.catalogs.detail(id)),
 
-  create: (data: CreateCatalogRequest) =>
-    post<Catalog>(API_ENDPOINTS.catalogs.create, data),
+  create: (data: CreateCatalogRequest | FormData) => {
+    // If FormData, use apiClient directly to handle multipart/form-data
+    if (data instanceof FormData) {
+      return apiClient.post<ApiResponse<Catalog>>(API_ENDPOINTS.catalogs.create, data).then(response => response.data);
+    }
+    // Otherwise, use regular JSON post
+    return post<Catalog>(API_ENDPOINTS.catalogs.create, data);
+  },
 
-  update: (id: string | number, data: UpdateCatalogRequest) =>
-    put<Catalog>(API_ENDPOINTS.catalogs.update(id), data),
+  update: (id: string | number, data: UpdateCatalogRequest | FormData) => {
+    // If FormData, use apiClient directly to handle multipart/form-data
+    if (data instanceof FormData) {
+      return apiClient.put<ApiResponse<Catalog>>(API_ENDPOINTS.catalogs.update(id), data).then(response => response.data);
+    }
+    // Otherwise, use regular JSON put
+    return put<Catalog>(API_ENDPOINTS.catalogs.update(id), data);
+  },
 
   delete: (id: string | number) =>
     del<{ message: string }>(API_ENDPOINTS.catalogs.delete(id)),

@@ -25,6 +25,11 @@ import {
   Shield,
   Settings,
   CheckCircle,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
+  Star,
+  Loader2 as Loader2Icon,
 } from "lucide-react"
 import type { Catalog, UpdateCatalogRequest, AIDescriptionResponse, CatalogTechnicalSpecs, CatalogSafetyInfo } from "@/lib/api/types"
 
@@ -58,6 +63,11 @@ export default function EditCatalogPage() {
   const [isFoodProduct, setIsFoodProduct] = useState(false)
   const [aiGenerated, setAiGenerated] = useState(false)
 
+  // Image upload state
+  const [selectedImages, setSelectedImages] = useState<Array<{ file: File; preview: string; altText: string; isPrimary: boolean }>>([])
+  const [deletingImageId, setDeletingImageId] = useState<number | null>(null)
+  const [settingPrimaryImageId, setSettingPrimaryImageId] = useState<number | null>(null)
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -73,6 +83,13 @@ export default function EditCatalogPage() {
 
     fetchCatalog()
   }, [mounted, router, catalogId])
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      selectedImages.forEach(img => URL.revokeObjectURL(img.preview))
+    }
+  }, [selectedImages])
 
   const fetchCatalog = async () => {
     try {
@@ -120,6 +137,99 @@ export default function EditCatalogPage() {
 
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove))
+  }
+
+  // Image upload handlers
+  const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon', 'image/heic', 'image/heif']
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    const newImages: Array<{ file: File; preview: string; altText: string }> = []
+
+    Array.from(files).forEach((file) => {
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        setError(`File ${file.name} melebihi batas 10MB dan akan dilewati`)
+        return
+      }
+
+      // Validate file type
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setError(`File ${file.name} bukan format gambar yang didukung`)
+        return
+      }
+
+      const preview = URL.createObjectURL(file)
+      newImages.push({ file, preview, altText: '' })
+    })
+
+    setSelectedImages([...selectedImages, ...newImages])
+    e.target.value = '' // Reset input
+  }
+
+  const handleRemoveImage = (index: number) => {
+    const newImages = selectedImages.filter((_, i) => i !== index)
+    // Revoke object URL to prevent memory leak
+    URL.revokeObjectURL(selectedImages[index].preview)
+    setSelectedImages(newImages)
+  }
+
+  const handleImageAltTextChange = (index: number, altText: string) => {
+    const newImages = [...selectedImages]
+    newImages[index].altText = altText
+    setSelectedImages(newImages)
+  }
+
+  const handleTogglePrimaryNewImage = (index: number) => {
+    const newImages = selectedImages.map((img, i) => ({
+      ...img,
+      isPrimary: i === index
+    }))
+    setSelectedImages(newImages)
+  }
+
+  const handleDeleteExistingImage = async (imageId: number) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus gambar ini?")) return
+
+    try {
+      setDeletingImageId(imageId)
+      setError(null)
+      await catalogService.deleteImage(catalogId, imageId)
+      // Refresh catalog data
+      await fetchCatalog()
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Gagal menghapus gambar")
+    } finally {
+      setDeletingImageId(null)
+    }
+  }
+
+  const handleSetPrimaryExistingImage = async (imageId: number) => {
+    try {
+      setSettingPrimaryImageId(imageId)
+      setError(null)
+      
+      // First, unset all other primary images
+      if (catalog?.images) {
+        const otherPrimaryImages = catalog.images.filter(img => img.is_primary && img.id !== imageId)
+        for (const img of otherPrimaryImages) {
+          await catalogService.updateImage(catalogId, img.id, { is_primary: false })
+        }
+      }
+      
+      // Then set this one as primary
+      await catalogService.updateImage(catalogId, imageId, { is_primary: true })
+      
+      // Refresh catalog data
+      await fetchCatalog()
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Gagal mengatur gambar utama")
+    } finally {
+      setSettingPrimaryImageId(null)
+    }
   }
 
   const handleGenerateAI = async () => {
@@ -198,6 +308,47 @@ export default function EditCatalogPage() {
       setSaving(true)
       setError(null)
 
+      // If images are selected, use FormData
+      if (selectedImages.length > 0) {
+        const formData = new FormData()
+        
+        // Add basic fields
+        formData.append('display_name', displayName.trim())
+        formData.append('base_price_exw', basePriceExw)
+        formData.append('min_order_quantity', minOrderQuantity || '1')
+        formData.append('unit_type', unitType)
+        formData.append('lead_time_days', leadTimeDays || '14')
+        
+        // Add tags
+        tags.forEach((tag, index) => {
+          formData.append(`tags[${index}]`, tag)
+        })
+
+        // Add AI description fields if filled
+        if (exportDescription.trim()) {
+          formData.append('export_description', exportDescription.trim())
+        }
+        if (Object.keys(technicalSpecs).length > 0) {
+          formData.append('technical_specs', JSON.stringify(technicalSpecs))
+        }
+        if (Object.keys(safetyInfo).length > 0) {
+          formData.append('safety_info', JSON.stringify(safetyInfo))
+        }
+
+        // Add new images
+        selectedImages.forEach((img, index) => {
+          formData.append('images[]', img.file)
+          if (img.altText.trim()) {
+            formData.append(`alt_text_${index}`, img.altText.trim())
+          }
+        })
+
+        await catalogService.update(catalogId, formData)
+        router.push(`/catalogs/${catalogId}`)
+        return
+      }
+
+      // Otherwise, use regular JSON request
       const data: UpdateCatalogRequest = {
         display_name: displayName.trim(),
         base_price_exw: parseFloat(basePriceExw),
@@ -627,6 +778,162 @@ export default function EditCatalogPage() {
                     className="mt-1 bg-white"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Existing Images */}
+            {catalog?.images && catalog.images.length > 0 && (
+              <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe] mb-6">
+                <h2 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-4">
+                  <ImageIcon className="h-5 w-5 text-[#8B5CF6]" />
+                  Gambar yang Sudah Ada
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {catalog.images.map((image) => (
+                    <div key={image.id} className="relative group border-2 border-[#e0f2fe] rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                      <div className="aspect-square relative">
+                        <img
+                          src={image.url}
+                          alt={image.alt_text || "Catalog image"}
+                          className="w-full h-full object-cover"
+                        />
+                        {image.is_primary && (
+                          <div className="absolute top-2 left-2 bg-[#F59E0B] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
+                            <Star className="h-3 w-3 fill-white" />
+                            Utama
+                          </div>
+                        )}
+                        {/* Overlay on hover */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200"></div>
+                        {/* Action buttons - always visible but more prominent on hover */}
+                        <div className="absolute top-2 right-2 flex gap-2 z-20">
+                          <button
+                            type="button"
+                            onClick={() => handleSetPrimaryExistingImage(image.id)}
+                            disabled={settingPrimaryImageId === image.id || image.is_primary}
+                            className={`rounded-full p-1.5 shadow-lg transition-all ${
+                              image.is_primary
+                                ? 'bg-[#F59E0B] text-white opacity-100'
+                                : 'bg-yellow-500 hover:bg-yellow-600 text-white opacity-70 group-hover:opacity-100'
+                            } disabled:opacity-50`}
+                            title={image.is_primary ? "Gambar utama" : "Set sebagai utama"}
+                          >
+                            {settingPrimaryImageId === image.id ? (
+                              <Loader2Icon className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Star className={`h-4 w-4 ${image.is_primary ? 'fill-white' : ''}`} />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExistingImage(image.id)}
+                            disabled={deletingImageId === image.id}
+                            className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg opacity-70 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                            title="Hapus gambar"
+                          >
+                            {deletingImageId === image.id ? (
+                              <Loader2Icon className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs text-[#0C4A6E] truncate">
+                          {image.alt_text || "Tidak ada alt text"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Image Upload */}
+            <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe] mb-6">
+              <h2 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2 mb-4">
+                <ImageIcon className="h-5 w-5 text-[#8B5CF6]" />
+                Tambah Gambar Produk
+              </h2>
+              <p className="text-sm text-[#7DD3FC] mb-4">
+                Upload gambar baru untuk katalog. Maksimal 10MB per gambar. Format: JPG, PNG, GIF, WebP, SVG, BMP, TIFF, ICO, HEIC, HEIF
+              </p>
+
+              <div className="space-y-4">
+                {/* File Input */}
+                <div className="relative">
+                  <input
+                    type="file"
+                    id="image-upload-edit"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('image-upload-edit')?.click()}
+                    className="w-full border-2 border-dashed border-[#0284C7] hover:bg-[#F0F9FF]"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Pilih Gambar Baru
+                  </Button>
+                </div>
+
+                {/* Image Preview Grid */}
+                {selectedImages.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedImages.map((img, index) => (
+                      <div key={index} className="relative group border-2 border-[#e0f2fe] rounded-xl overflow-hidden bg-white">
+                        <div className="aspect-square relative">
+                          <img
+                            src={img.preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {img.isPrimary && (
+                            <div className="absolute top-2 left-2 bg-[#F59E0B] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                              <Star className="h-3 w-3 fill-white" />
+                              Utama
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePrimaryNewImage(index)}
+                              className={`rounded-full p-1.5 ${
+                                img.isPrimary
+                                  ? 'bg-[#F59E0B] text-white'
+                                  : 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                              }`}
+                              title={img.isPrimary ? "Gambar utama" : "Set sebagai utama"}
+                            >
+                              <Star className={`h-4 w-4 ${img.isPrimary ? 'fill-white' : ''}`} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(index)}
+                              className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="p-2">
+                          <Input
+                            type="text"
+                            placeholder="Alt text (opsional)"
+                            value={img.altText}
+                            onChange={(e) => handleImageAltTextChange(index, e.target.value)}
+                            className="text-xs"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
