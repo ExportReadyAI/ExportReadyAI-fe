@@ -76,6 +76,7 @@ export default function ExportAnalysisPage() {
   const fetchAnalyses = async () => {
     try {
       setLoading(true)
+      setError(null) // Clear previous errors
       const params: any = {
         page,
         limit: 10,
@@ -110,11 +111,22 @@ export default function ExportAnalysisPage() {
             analysesData = apiResponse.data
             totalCountValue = apiResponse.pagination?.count || analysesData.length
             totalPagesValue = apiResponse.pagination?.total_pages || 1
+          } else if (apiResponse.data && 'results' in apiResponse.data) {
+            analysesData = apiResponse.data.results || []
+            totalCountValue = apiResponse.data.count || analysesData.length
+            const limit = params.limit || 10
+            totalPagesValue = Math.ceil(totalCountValue / limit)
           } else if (apiResponse.data && 'data' in apiResponse.data) {
             analysesData = apiResponse.data.data
             totalCountValue = apiResponse.data.pagination?.count || analysesData.length
             totalPagesValue = apiResponse.data.pagination?.total_pages || 1
           }
+        } else if ('results' in response) {
+          const djangoResponse = response as any
+          analysesData = Array.isArray(djangoResponse.results) ? djangoResponse.results : []
+          totalCountValue = djangoResponse.count || analysesData.length
+          const limit = params.limit || 10
+          totalPagesValue = Math.ceil(totalCountValue / limit)
         } else if (Array.isArray(response)) {
           analysesData = response
           totalCountValue = response.length
@@ -125,7 +137,8 @@ export default function ExportAnalysisPage() {
       setTotalPages(totalPagesValue)
       setTotalCount(totalCountValue)
     } catch (err: any) {
-      setError(err.response?.data?.message || "Terjadi kesalahan")
+      console.error("Export Analysis Error:", err)
+      setError(err.response?.data?.message || err.response?.data?.detail || "Terjadi kesalahan saat memuat data")
     } finally {
       setLoading(false)
     }
@@ -145,8 +158,8 @@ export default function ExportAnalysisPage() {
 
   const handleCreateAnalysis = async () => {
     try {
-      // Check if user has any products
-      const response = await productService.list({ limit: 1 })
+      // Check if user has any products - get more to check enrichment
+      const response = await productService.list({ limit: 100 })
       
       let productsData: any[] = []
       if (response && typeof response === 'object') {
@@ -154,10 +167,10 @@ export default function ExportAnalysisPage() {
           productsData = Array.isArray((response as any).data) 
             ? (response as any).data 
             : (response as any).data?.results || []
-        } else if (Array.isArray(response)) {
-          productsData = response
         } else if ('results' in response) {
           productsData = (response as any).results || []
+        } else if (Array.isArray(response)) {
+          productsData = response
         }
       }
 
