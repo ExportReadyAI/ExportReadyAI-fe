@@ -25,14 +25,15 @@ import {
   Clock,
   Image as ImageIcon,
 } from "lucide-react"
-import type { BuyerRequest, MatchedUMKM } from "@/lib/api/types"
+import type { BuyerRequest, MatchedUMKM, MatchedCatalog } from "@/lib/api/types"
 
 export default function BuyerRequestDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const { isAuthenticated, isBuyer } = useAuthStore()
+  const { isAuthenticated, isBuyer, isUMKM } = useAuthStore()
   const [request, setRequest] = useState<BuyerRequest | null>(null)
   const [matchedUMKM, setMatchedUMKM] = useState<MatchedUMKM[]>([])
+  const [matchedCatalogs, setMatchedCatalogs] = useState<MatchedCatalog[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMatches, setLoadingMatches] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -54,8 +55,14 @@ export default function BuyerRequestDetailPage() {
     }
 
     fetchRequest()
-    fetchMatchedUMKM()
-  }, [mounted, requestId, router, isAuthenticated])
+    
+    // Fetch matched data based on user role
+    if (isBuyer()) {
+      fetchMatchedUMKM()
+    } else if (isUMKM()) {
+      fetchMatchedCatalogs()
+    }
+  }, [mounted, requestId, router, isAuthenticated, isBuyer, isUMKM])
 
   const fetchRequest = async () => {
     try {
@@ -80,6 +87,19 @@ export default function BuyerRequestDetailPage() {
       setMatchedUMKM(Array.isArray(matchesData) ? matchesData : [])
     } catch (err: any) {
       console.error("Error fetching matched UMKM:", err)
+    } finally {
+      setLoadingMatches(false)
+    }
+  }
+
+  const fetchMatchedCatalogs = async () => {
+    try {
+      setLoadingMatches(true)
+      const response = await buyerRequestService.getMatchedCatalogs(requestId)
+      const catalogsData = (response as any).success ? (response as any).data : response
+      setMatchedCatalogs(Array.isArray(catalogsData) ? catalogsData : [])
+    } catch (err: any) {
+      console.error("Error fetching matched catalogs:", err)
     } finally {
       setLoadingMatches(false)
     }
@@ -238,25 +258,35 @@ export default function BuyerRequestDetailPage() {
                 </CardContent>
               </Card>
 
-              {/* Matched UMKM */}
+              {/* Matched UMKM (for Buyer) or Matched Catalogs (for UMKM) */}
               <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe]">
                 <CardHeader>
                   <CardTitle className="text-2xl font-extrabold text-[#0C4A6E] flex items-center gap-2">
-                    <Users className="h-6 w-6 text-[#EC4899]" />
-                    Matched UMKM ({matchedUMKM.length})
+                    {isBuyer() ? (
+                      <>
+                        <Users className="h-6 w-6 text-[#EC4899]" />
+                        Matched UMKM ({matchedUMKM.length})
+                      </>
+                    ) : (
+                      <>
+                        <Package className="h-6 w-6 text-[#8B5CF6]" />
+                        Katalog Saya yang Cocok ({matchedCatalogs.length})
+                      </>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {loadingMatches ? (
                     <div className="text-center py-8">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#0284C7] border-t-transparent"></div>
-                      <p className="mt-2 text-sm text-gray-500">Mencari UMKM yang sesuai...</p>
+                      <p className="mt-2 text-sm text-gray-500">{isBuyer() ? 'Mencari UMKM yang sesuai...' : 'Mencari katalog yang cocok...'}</p>
                     </div>
-                  ) : matchedUMKM.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      Belum ada UMKM yang match dengan kriteria Anda
-                    </div>
-                  ) : (
+                  ) : isBuyer() ? (
+                    matchedUMKM.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        Belum ada UMKM yang match dengan kriteria Anda
+                      </div>
+                    ) : (
                     <div className="space-y-6">
                       {matchedUMKM.map((umkm) => (
                         <Card key={umkm.umkm_id} className="border-2 border-[#e0f2fe] shadow-sm hover:shadow-md transition-shadow">
@@ -380,6 +410,107 @@ export default function BuyerRequestDetailPage() {
                         </Card>
                       ))}
                     </div>
+                    )
+                  ) : (
+                    // UMKM View: Show their matched catalogs
+                    matchedCatalogs.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        Tidak ada katalog Anda yang cocok dengan request ini
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {matchedCatalogs.map((catalog) => (
+                          <Card key={catalog.catalog_id} className="border-2 border-[#e0f2fe] shadow-sm hover:shadow-md transition-shadow">
+                            <CardContent className="p-6">
+                              <div className="flex items-start gap-4 mb-4">
+                                {/* Catalog Image */}
+                                {catalog.primary_image && (
+                                  <div className="flex-shrink-0">
+                                    <img
+                                      src={catalog.primary_image}
+                                      alt={catalog.display_name}
+                                      className="w-24 h-24 object-cover rounded-xl border-2 border-[#e0f2fe]"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none'
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                
+                                <div className="flex-1">
+                                  {/* Title and Match Score */}
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h5 className="font-bold text-lg text-[#0C4A6E]">{catalog.display_name}</h5>
+                                    <Badge className="bg-[#F59E0B] text-white text-sm font-bold px-3 py-1">
+                                      Match: {catalog.match_score}%
+                                    </Badge>
+                                    {catalog.has_ai_description && (
+                                      <Badge className="bg-[#22C55E] text-white text-xs">
+                                        AI Ready
+                                      </Badge>
+                                    )}
+                                    {!catalog.is_published && (
+                                      <Badge variant="outline" className="text-xs">
+                                        Draft
+                                      </Badge>
+                                    )}
+                                  </div>
+
+                                  {/* Match Reasons */}
+                                  <div className="mb-3">
+                                    <p className="text-xs font-bold text-[#0284C7] mb-1">Alasan Match:</p>
+                                    <ul className="space-y-1">
+                                      {catalog.match_reasons.map((reason, idx) => (
+                                        <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
+                                          <span className="text-[#22C55E] mt-0.5">✓</span>
+                                          <span>{reason}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+
+                                  {/* Pricing & Details */}
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-[#F0F9FF] rounded-lg">
+                                    <div>
+                                      <Label className="text-[#0284C7] font-bold text-xs flex items-center gap-1 mb-1">
+                                        <DollarSign className="h-3 w-3" />
+                                        EXW
+                                      </Label>
+                                      <p className="text-[#0C4A6E] font-bold text-sm">${catalog.base_price_exw.toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-[#0284C7] font-bold text-xs flex items-center gap-1 mb-1">
+                                        <Package className="h-3 w-3" />
+                                        MOQ
+                                      </Label>
+                                      <p className="text-[#0C4A6E] font-bold text-sm">
+                                        {catalog.min_order_quantity.toLocaleString()} {catalog.unit_type}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-[#0284C7] font-bold text-xs flex items-center gap-1 mb-1">
+                                        <Clock className="h-3 w-3" />
+                                        Lead Time
+                                      </Label>
+                                      <p className="text-[#0C4A6E] font-bold text-sm">{catalog.lead_time_days} days</p>
+                                    </div>
+                                    <div className="flex items-end">
+                                      <Button
+                                        onClick={() => router.push(`/catalogs/${catalog.catalog_id}`)}
+                                        size="sm"
+                                        className="w-full bg-[#8B5CF6] hover:bg-[#7c3aed] shadow-[0_4px_0_0_#6d28d9]"
+                                      >
+                                        Detail
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )
                   )}
                 </CardContent>
               </Card>

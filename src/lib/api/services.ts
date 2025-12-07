@@ -360,6 +360,9 @@ export const buyerRequestService = {
   
   getMatchedUMKM: (id: string | number) =>
     get<MatchedUMKM[]>(API_ENDPOINTS.buyerRequests.matchedUMKM(id)),
+  
+  getMatchedCatalogs: (id: string | number) =>
+    get<MatchedCatalog[]>(API_ENDPOINTS.buyerRequests.matchedCatalogs(id)),
 };
 
 // ==================== Forwarder Services (Module 6B) ====================

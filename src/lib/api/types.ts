@@ -496,6 +496,21 @@ export interface MatchedUMKM {
   catalog: MatchedUMKMCatalog;
 }
 
+// Matched Catalog (for UMKM viewing their catalogs that match buyer requests)
+export interface MatchedCatalog {
+  catalog_id: number;
+  display_name: string;
+  match_score: number;
+  match_reasons: string[];
+  primary_image?: string;
+  base_price_exw: number;
+  min_order_quantity: number;
+  unit_type: string;
+  lead_time_days: number;
+  has_ai_description: boolean;
+  is_published: boolean;
+}
+
 // ==================== Module 6: Forwarder Types ====================
 
 export interface ForwarderContactInfo {

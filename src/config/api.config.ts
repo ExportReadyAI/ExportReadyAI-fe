@@ -91,6 +91,7 @@ export const API_ENDPOINTS = {
     updateStatus: (id: string | number) => `/buyer-requests/${id}/status/`,
     delete: (id: string | number) => `/buyer-requests/${id}/`,
     matchedUMKM: (id: string | number) => `/buyer-requests/${id}/matched-umkm/`,
+    matchedCatalogs: (id: string | number) => `/buyer-requests/${id}/matched-catalogs/`,
   },
   
   // Forwarder endpoints (Module 6B)
