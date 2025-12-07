@@ -1,0 +1,4 @@
+# Health check endpoint for Railway
+# This file will be served at /health for monitoring
+
+HEALTHY

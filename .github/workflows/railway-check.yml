@@ -1,0 +1,45 @@
+name: Railway Deployment Check
+
+on:
+  push:
+    branches: [ main, compliant ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linter
+      run: npm run lint || true
+    
+    - name: Build application
+      run: npm run build
+      env:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+    
+    - name: Check build artifacts
+      run: |
+        if [ -d ".next" ]; then
+          echo "✅ Build successful"
+          ls -la .next/
+        else
+          echo "❌ Build failed"
+          exit 1
+        fi
