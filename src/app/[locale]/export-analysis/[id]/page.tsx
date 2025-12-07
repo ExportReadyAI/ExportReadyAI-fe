@@ -13,7 +13,7 @@ import { CircularProgress } from "@/components/shared/CircularProgress"
 import { DeleteAnalysisModal } from "@/components/shared/DeleteAnalysisModal"
 import { ReanalyzeModal } from "@/components/shared/ReanalyzeModal"
 import { ProductChangedAlert } from "@/components/shared/ProductChangedAlert"
-import { SmartRepairModal } from "@/components/shared/SmartRepairModal"
+import { BatchComplianceRepairModal } from "@/components/shared/BatchComplianceRepairModal"
 import {
   ArrowLeft,
   FileText,
@@ -28,7 +28,7 @@ import {
   RefreshCw,
   BookOpen,
 } from "lucide-react"
-import type { ExportAnalysis, ComplianceIssue, Product } from "@/lib/api/types"
+import type { ExportAnalysis } from "@/lib/api/types"
 
 export default function ExportAnalysisDetailPage() {
   const router = useRouter()
@@ -40,12 +40,7 @@ export default function ExportAnalysisDetailPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [reanalyzeModalOpen, setReanalyzeModalOpen] = useState(false)
   const [reanalyzing, setReanalyzing] = useState(false)
-  const [smartRepairOpen, setSmartRepairOpen] = useState(false)
-  const [repairField, setRepairField] = useState<{
-    path: string
-    label: string
-    value: string | number
-  } | null>(null)
+  const [batchRepairOpen, setBatchRepairOpen] = useState(false)
 
   const analysisId = params?.id as string
 
@@ -113,15 +108,14 @@ export default function ExportAnalysisDetailPage() {
     return analysis?.product || analysis?.product_id || 0
   }
 
-  // Handler untuk Smart Repair: Fix -> Save -> Re-analyze
-  const handleSmartRepair = (fieldPath: string, fieldLabel: string, currentValue: string | number) => {
-    setRepairField({ path: fieldPath, label: fieldLabel, value: currentValue })
-    setSmartRepairOpen(true)
+  // Handler untuk Batch Repair: Fix All -> Save -> Re-analyze
+  const handleBatchRepair = () => {
+    setBatchRepairOpen(true)
   }
 
   const handleRepairComplete = async () => {
     // After repair, refresh analysis data (no auto re-analyze)
-    setSmartRepairOpen(false)
+    setBatchRepairOpen(false)
     // Refresh analysis to show product_changed warning
     await fetchAnalysis()
   }
@@ -136,19 +130,6 @@ export default function ExportAnalysisDetailPage() {
     if (score < 50) return "Not Ready"
     if (score <= 75) return "Need Improvement"
     return "Ready"
-  }
-
-  // Helper: Map issue type to product field path
-  const getFieldPathFromIssue = (issue: ComplianceIssue): string => {
-    const typeToFieldMap: Record<string, string> = {
-      "Material Composition": "material_composition",
-      "Nutrition Facts": "quality_specs.nutrition_facts",
-      "Allergen Info": "quality_specs.allergen_info",
-      "Ingredients": "quality_specs.ingredients",
-      "Packaging Type": "packaging_type",
-      "Durability Claim": "durability_claim",
-    }
-    return typeToFieldMap[issue.type] || "description_local"
   }
 
   const getSeverityIcon = (severity: string) => {
@@ -314,10 +295,22 @@ export default function ExportAnalysisDetailPage() {
             {/* Compliance Issues */}
             <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe]">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-[#EF4444]" />
-                  Compliance Issues
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-[#EF4444]" />
+                    Compliance Issues
+                  </CardTitle>
+                  {!isAdmin() && analysis.compliance_issues && analysis.compliance_issues.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleBatchRepair}
+                      className="text-xs"
+                    >
+                      🔧 Fix All Issues
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {analysis.compliance_issues && analysis.compliance_issues.length > 0 ? (
@@ -353,20 +346,6 @@ export default function ExportAnalysisDetailPage() {
                                     <p className="font-bold text-[#0C4A6E]">{issue.required_value}</p>
                                   </div>
                                 </div>
-                                {!isAdmin() && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleSmartRepair(
-                                      getFieldPathFromIssue(issue),
-                                      issue.type,
-                                      issue.your_value || ""
-                                    )}
-                                    className="mt-2 text-xs"
-                                  >
-                                    🔧 Fix This
-                                  </Button>
-                                )}
                               </>
                             )}
                           </div>
@@ -437,18 +416,13 @@ export default function ExportAnalysisDetailPage() {
             countryName={analysis.country_name}
           />
 
-          {repairField && (
-            <SmartRepairModal
-              open={smartRepairOpen}
-              onOpenChange={setSmartRepairOpen}
-              analysisId={analysis.id}
-              productId={getProductId()}
-              fieldPath={repairField.path}
-              fieldLabel={repairField.label}
-              currentValue={repairField.value}
-              onRepairComplete={handleRepairComplete}
-            />
-          )}
+          <BatchComplianceRepairModal
+            open={batchRepairOpen}
+            onOpenChange={setBatchRepairOpen}
+            productId={getProductId()}
+            complianceIssues={analysis.compliance_issues || []}
+            onRepairComplete={handleRepairComplete}
+          />
         </div>
       </main>
     </div>
