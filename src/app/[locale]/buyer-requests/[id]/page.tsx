@@ -26,6 +26,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react"
 import type { BuyerRequest, MatchedUMKM, MatchedCatalog } from "@/lib/api/types"
+import { SelectCatalogModal } from "@/components/shared/SelectCatalogModal"
 
 export default function BuyerRequestDetailPage() {
   const router = useRouter()
@@ -36,7 +37,11 @@ export default function BuyerRequestDetailPage() {
   const [matchedCatalogs, setMatchedCatalogs] = useState<MatchedCatalog[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMatches, setLoadingMatches] = useState(false)
-  const [selectingCatalog, setSelectingCatalog] = useState<number | null>(null)
+  const [selectModalOpen, setSelectModalOpen] = useState(false)
+  const [selectedCatalog, setSelectedCatalog] = useState<{ id: number; name: string; companyName: string; umkmId: number } | null>(null)
+  const [selectingCatalog, setSelectingCatalog] = useState(false)
+  const [selectSuccess, setSelectSuccess] = useState(false)
+  const [selectError, setSelectError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
 
@@ -106,28 +111,42 @@ export default function BuyerRequestDetailPage() {
     }
   }
 
-  const handleSelectCatalog = async (catalogId: number, umkmId: number) => {
-    if (!confirm("Apakah Anda yakin ingin memilih katalog ini? Request akan ditutup setelah memilih.")) {
-      return
-    }
+  const handleSelectCatalog = async (catalogId: number, catalogName: string, companyName: string, umkmId: number) => {
+    setSelectedCatalog({ id: catalogId, name: catalogName, companyName, umkmId })
+    setSelectModalOpen(true)
+    setSelectSuccess(false)
+    setSelectError(null)
+  }
+
+  const confirmSelectCatalog = async () => {
+    if (!selectedCatalog) return
 
     try {
-      setSelectingCatalog(catalogId)
-      // Update request status to Closed (or Matched, depending on business logic)
+      setSelectingCatalog(true)
+      setSelectError(null)
+      
+      // Update request status to Closed
       await buyerRequestService.updateStatus(requestId, { 
         status: 'Closed',
-        // You might want to also save selected_catalog_id and selected_umkm_id
       })
+      
+      // Show success state
+      setSelectSuccess(true)
       
       // Refresh request data
       await fetchRequest()
-      setSelectingCatalog(null)
       
-      alert("Katalog berhasil dipilih! Request Anda telah ditutup.")
+      // Auto close modal after 2 seconds
+      setTimeout(() => {
+        setSelectModalOpen(false)
+        setSelectSuccess(false)
+        setSelectedCatalog(null)
+      }, 2000)
     } catch (err: any) {
       console.error("Error selecting catalog:", err)
-      setError(err.response?.data?.message || "Gagal memilih katalog")
-      setSelectingCatalog(null)
+      setSelectError(err.response?.data?.message || err.response?.data?.detail || "Gagal memilih katalog")
+    } finally {
+      setSelectingCatalog(false)
     }
   }
 
@@ -446,21 +465,17 @@ export default function BuyerRequestDetailPage() {
                               </Button>
                               {request?.status === 'Open' && (
                                 <Button
-                                  onClick={() => handleSelectCatalog(umkm.catalog.id, umkm.umkm_id)}
-                                  disabled={selectingCatalog === umkm.catalog.id}
+                                  onClick={() => handleSelectCatalog(
+                                    umkm.catalog.id, 
+                                    umkm.catalog.display_name,
+                                    umkm.company_name,
+                                    umkm.umkm_id
+                                  )}
+                                  disabled={selectingCatalog}
                                   className="flex-1 bg-[#22C55E] hover:bg-[#16a34a] shadow-[0_4px_0_0_#15803d]"
                                 >
-                                  {selectingCatalog === umkm.catalog.id ? (
-                                    <>
-                                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                                      Selecting...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Star className="mr-2 h-4 w-4" />
-                                      Select This
-                                    </>
-                                  )}
+                                  <Star className="mr-2 h-4 w-4" />
+                                  Select This
                                 </Button>
                               )}
                             </div>
@@ -597,6 +612,20 @@ export default function BuyerRequestDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Select Catalog Modal */}
+      {selectedCatalog && (
+        <SelectCatalogModal
+          open={selectModalOpen}
+          onOpenChange={setSelectModalOpen}
+          catalogName={selectedCatalog.name}
+          companyName={selectedCatalog.companyName}
+          onConfirm={confirmSelectCatalog}
+          loading={selectingCatalog}
+          success={selectSuccess}
+          error={selectError}
+        />
+      )}
     </div>
   )
 }
