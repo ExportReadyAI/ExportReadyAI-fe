@@ -441,6 +441,8 @@ export interface BuyerRequest {
   min_rank_required: number;
   status: BuyerRequestStatus;
   match_score?: number; // For UMKM view
+  selected_catalog_id?: number; // Selected catalog when closed
+  selected_umkm_id?: number; // Selected UMKM when closed
   created_at: string;
   updated_at: string;
 }
@@ -459,6 +461,8 @@ export interface UpdateBuyerRequestRequest extends Partial<CreateBuyerRequestReq
 
 export interface UpdateBuyerRequestStatusRequest {
   status: BuyerRequestStatus;
+  selected_catalog_id?: number;
+  selected_umkm_id?: number;
 }
 
 export interface MatchedUMKMContactInfo {

@@ -44,6 +44,7 @@ export default function BuyerRequestDetailPage() {
   const [selectError, setSelectError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [localSelectedCatalogId, setLocalSelectedCatalogId] = useState<number | null>(null)
 
   const requestId = params?.id as string
 
@@ -125,16 +126,24 @@ export default function BuyerRequestDetailPage() {
       setSelectingCatalog(true)
       setSelectError(null)
       
-      // Update request status to Closed
+      // Update request status to Closed with selected catalog info
       await buyerRequestService.updateStatus(requestId, { 
         status: 'Closed',
+        selected_catalog_id: selectedCatalog.id,
+        selected_umkm_id: selectedCatalog.umkmId,
       })
       
       // Show success state
       setSelectSuccess(true)
       
-      // Refresh request data
-      await fetchRequest()
+      // Store selected catalog ID locally as fallback
+      setLocalSelectedCatalogId(selectedCatalog.id)
+      
+      // Refresh request data - WAIT for both to complete
+      await Promise.all([
+        fetchRequest(),
+        fetchMatchedUMKM()
+      ])
       
       // Auto close modal after 2 seconds
       setTimeout(() => {
@@ -321,8 +330,17 @@ export default function BuyerRequestDetailPage() {
                   <CardTitle className="text-2xl font-extrabold text-[#0C4A6E] flex items-center gap-2">
                     {isBuyer() ? (
                       <>
-                        <Users className="h-6 w-6 text-[#EC4899]" />
-                        Matched UMKM ({matchedUMKM.length})
+                        {request?.status === 'Closed' && (request?.selected_catalog_id || localSelectedCatalogId) ? (
+                          <>
+                            <Star className="h-6 w-6 text-[#F59E0B]" />
+                            Supplier Terpilih
+                          </>
+                        ) : (
+                          <>
+                            <Users className="h-6 w-6 text-[#EC4899]" />
+                            Matched UMKM ({matchedUMKM.length})
+                          </>
+                        )}
                       </>
                     ) : (
                       <>
@@ -345,19 +363,43 @@ export default function BuyerRequestDetailPage() {
                       </div>
                     ) : (
                     <div className="space-y-6">
-                      {matchedUMKM.map((umkm) => (
-                        <Card key={umkm.umkm_id} className="border-2 border-[#e0f2fe] shadow-sm hover:shadow-md transition-shadow">
+                      {/* Filter to show only selected UMKM if request is closed */}
+                      {(() => {
+                        // Use backend field or local state as fallback
+                        const selectedCatalogId = request?.selected_catalog_id || localSelectedCatalogId
+                        
+                        // If request is closed and has selected_catalog_id, show only that one
+                        const filtered = matchedUMKM.filter(umkm => {
+                          if (request?.status === 'Closed' && selectedCatalogId) {
+                            return umkm.catalog.id === selectedCatalogId
+                          }
+                          // Otherwise show all matched UMKM
+                          return true
+                        })
+                        
+                        return filtered
+                      })()
+                        .map((umkm, index) => (
+                        <Card key={`umkm-${umkm.umkm_id}-${umkm.catalog.id}-${index}`} className="border-2 border-[#e0f2fe] shadow-sm hover:shadow-md transition-shadow">
                           <CardContent className="p-6">
                             {/* Header with Company Info */}
                             <div className="flex items-start justify-between mb-4 pb-4 border-b border-[#e0f2fe]">
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
                                   <h4 className="text-xl font-extrabold text-[#0C4A6E]">{umkm.company_name}</h4>
-                                  {umkm.match && (
-                                    <Badge className="bg-[#22C55E] text-white text-sm font-bold px-3 py-1">
-                                      Matched
-                                    </Badge>
-                                  )}
+                                  {(() => {
+                                    const selectedCatalogId = request?.selected_catalog_id || localSelectedCatalogId
+                                    return request?.status === 'Closed' && selectedCatalogId === umkm.catalog.id ? (
+                                      <Badge className="bg-[#F59E0B] text-white text-sm font-bold px-3 py-1">
+                                        <Star className="h-3 w-3 mr-1" />
+                                        Selected
+                                      </Badge>
+                                    ) : umkm.match && (
+                                      <Badge className="bg-[#22C55E] text-white text-sm font-bold px-3 py-1">
+                                        Matched
+                                      </Badge>
+                                    )
+                                  })()}
                                 </div>
                                 {umkm.full_name && (
                                   <p className="text-sm text-gray-600 mb-2">Contact: {umkm.full_name}</p>
@@ -492,8 +534,8 @@ export default function BuyerRequestDetailPage() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {matchedCatalogs.map((catalog) => (
-                          <Card key={catalog.catalog_id} className="border-2 border-[#e0f2fe] shadow-sm hover:shadow-md transition-shadow">
+                        {matchedCatalogs.map((catalog, index) => (
+                          <Card key={`catalog-${catalog.catalog_id}-${index}`} className="border-2 border-[#e0f2fe] shadow-sm hover:shadow-md transition-shadow">
                             <CardContent className="p-6">
                               <div className="flex items-start gap-4 mb-4">
                                 {/* Catalog Image */}
