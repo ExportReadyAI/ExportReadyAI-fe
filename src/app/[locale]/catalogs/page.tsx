@@ -27,7 +27,7 @@ import type { Catalog, Product } from "@/lib/api/types"
 
 export default function CatalogsPage() {
   const router = useRouter()
-  const { isAdmin } = useAuthStore()
+  const { isAdmin, isUMKM, isBuyer } = useAuthStore()
   const [catalogs, setCatalogs] = useState<Catalog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -48,6 +48,12 @@ export default function CatalogsPage() {
 
     if (!token) {
       router.push("/login")
+      return
+    }
+
+    // Redirect buyer to their buyer-requests page
+    if (isBuyer()) {
+      router.push("/buyer-requests")
       return
     }
 

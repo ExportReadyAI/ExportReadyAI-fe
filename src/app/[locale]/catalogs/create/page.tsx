@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/lib/stores/auth.store"
 import { catalogService, productService } from "@/lib/api/services"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Button } from "@/components/ui/button"
@@ -36,6 +37,7 @@ import type { Product, CreateCatalogRequest, AIDescriptionResponse, CatalogTechn
 
 export default function CreateCatalogPage() {
   const router = useRouter()
+  const { isBuyer } = useAuthStore()
   const [mounted, setMounted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -78,8 +80,14 @@ export default function CreateCatalogPage() {
       return
     }
 
+    // Redirect buyer to their buyer-requests page
+    if (isBuyer()) {
+      router.push("/buyer-requests")
+      return
+    }
+
     fetchProducts()
-  }, [mounted, router])
+  }, [mounted, router, isBuyer])
 
   // Cleanup object URLs on unmount
   useEffect(() => {
