@@ -334,7 +334,7 @@ export default function BuyerRequestDetailPage() {
                             </div>
 
                             {/* Pricing & Details Grid */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-4 bg-[#F0F9FF] rounded-xl">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 p-4 bg-[#F0F9FF] rounded-xl">
                               <div>
                                 <Label className="text-[#0284C7] font-bold text-xs flex items-center gap-1 mb-1">
                                   <DollarSign className="h-3 w-3" />
@@ -364,15 +364,6 @@ export default function BuyerRequestDetailPage() {
                                 </Label>
                                 <p className="text-[#0C4A6E] font-bold">{umkm.catalog.lead_time_days} days</p>
                               </div>
-                              {umkm.catalog.available_stock !== undefined && (
-                                <div>
-                                  <Label className="text-[#0284C7] font-bold text-xs flex items-center gap-1 mb-1">
-                                    <TrendingUp className="h-3 w-3" />
-                                    Stock
-                                  </Label>
-                                  <p className="text-[#0C4A6E] font-bold">{umkm.catalog.available_stock.toLocaleString()}</p>
-                                </div>
-                              )}
                             </div>
 
                             {/* Action Button */}

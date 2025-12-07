@@ -71,7 +71,7 @@ export default function ForwarderProfilePage() {
     specialization_routes: [],
     service_types: [],
   })
-  const [routeRows, setRouteRows] = useState<RouteRow[]>([{ id: Date.now().toString(), origin: "", destination: "" }])
+  const [routeRows, setRouteRows] = useState<RouteRow[]>([{ id: Date.now().toString(), origin: "ID", destination: "" }])
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set())
   const [otherServiceRows, setOtherServiceRows] = useState<OtherServiceRow[]>([{ id: Date.now().toString(), value: "" }])
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -96,15 +96,24 @@ export default function ForwarderProfilePage() {
   const fetchCountries = async () => {
     try {
       setLoadingCountries(true)
+      // Fetch countries from /api/v1/countries/ endpoint
       const response = await countryService.list()
       
+      // Handle response format: { success: true, data: [...] }
       if (response && typeof response === 'object' && 'success' in response && (response as any).success) {
-        setCountries((response as any).data || [])
+        const countriesData = (response as any).data || []
+        setCountries(countriesData)
       } else if (Array.isArray(response)) {
+        // Handle direct array response (fallback)
         setCountries(response)
+      } else {
+        console.warn("Unexpected countries response format:", response)
+        setCountries([])
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Gagal memuat negara")
+      console.error("Error fetching countries:", err)
+      setError(err.response?.data?.message || err.message || "Gagal memuat daftar negara")
+      setCountries([]) // Set empty array on error
     } finally {
       setLoadingCountries(false)
     }
@@ -140,17 +149,18 @@ export default function ForwarderProfilePage() {
           service_types: profileData.service_types || [],
         })
 
-        // Pre-fill routes
+        // Pre-fill routes (extract destination from route format "ORIGIN-DESTINATION")
         const routes: RouteRow[] = profileData.specialization_routes.length > 0
           ? profileData.specialization_routes.map((route) => {
-              const [origin, destination] = route.split('-')
+              const parts = route.split('-')
+              const destination = parts.length > 1 ? parts.slice(1).join('-') : "" // Handle multi-part destinations
               return {
                 id: Date.now().toString() + Math.random(),
-                origin: origin || "",
+                origin: "ID", // Always set to ID (Indonesia)
                 destination: destination || "",
               }
             })
-          : [{ id: Date.now().toString(), origin: "", destination: "" }]
+          : [{ id: Date.now().toString(), origin: "ID", destination: "" }]
         setRouteRows(routes)
 
         // Pre-fill services
@@ -172,7 +182,7 @@ export default function ForwarderProfilePage() {
         setOtherServiceRows(otherServices.length > 0 ? otherServices : [{ id: Date.now().toString(), value: "" }])
       } else {
         // No profile exists, start with empty form
-        setRouteRows([{ id: Date.now().toString(), origin: "", destination: "" }])
+        setRouteRows([{ id: Date.now().toString(), origin: "ID", destination: "" }])
         setOtherServiceRows([{ id: Date.now().toString(), value: "" }])
       }
     } catch (err: any) {
@@ -180,7 +190,7 @@ export default function ForwarderProfilePage() {
       if (err.response?.status !== 404) {
         console.error("Error fetching profile:", err)
       }
-      setRouteRows([{ id: Date.now().toString(), origin: "", destination: "" }])
+      setRouteRows([{ id: Date.now().toString(), origin: "ID", destination: "" }])
       setOtherServiceRows([{ id: Date.now().toString(), value: "" }])
     } finally {
       setLoadingProfile(false)
@@ -208,6 +218,9 @@ export default function ForwarderProfilePage() {
 
   // Route management
   const handleRouteChange = (id: string, field: 'origin' | 'destination', value: string) => {
+    // Origin is always "ID", only allow destination changes
+    if (field === 'origin') return
+    
     setRouteRows((prev) =>
       prev.map((row) => (row.id === id ? { ...row, [field]: value } : row))
     )
@@ -219,7 +232,7 @@ export default function ForwarderProfilePage() {
   const handleAddRouteRow = () => {
     setRouteRows((prev) => [
       ...prev,
-      { id: Date.now().toString(), origin: "", destination: "" },
+      { id: Date.now().toString(), origin: "ID", destination: "" },
     ])
   }
 
@@ -278,10 +291,10 @@ export default function ForwarderProfilePage() {
       newErrors.contact_phone = "Nomor telepon harus diisi"
     }
 
-    // Validate routes
+    // Validate routes (origin is always "ID")
     const validRoutes = routeRows
-      .filter((row) => row.origin && row.destination)
-      .map((row) => `${row.origin}-${row.destination}`)
+      .filter((row) => row.destination) // Only check destination since origin is always "ID"
+      .map((row) => `ID-${row.destination}`) // Always use "ID" as origin
     
     if (validRoutes.length === 0) {
       newErrors.routes = "Minimal 1 route harus ditambahkan"
@@ -313,10 +326,10 @@ export default function ForwarderProfilePage() {
     setLoading(true)
 
     try {
-      // Build routes from rows
+      // Build routes from rows (origin is always "ID")
       const routes = routeRows
-        .filter((row) => row.origin && row.destination)
-        .map((row) => `${row.origin}-${row.destination}`)
+        .filter((row) => row.destination) // Only check destination since origin is always "ID"
+        .map((row) => `ID-${row.destination}`) // Always use "ID" as origin
 
       // Build services
       const services = Array.from(selectedServices)
@@ -366,7 +379,7 @@ export default function ForwarderProfilePage() {
     if (formData.company_name.trim()) completed++
     if (formData.contact_info.email?.trim()) completed++
     if (formData.contact_info.phone?.trim()) completed++
-    if (routeRows.some(r => r.origin && r.destination)) completed++
+    if (routeRows.some(r => r.destination)) completed++ // Origin is always "ID", only check destination
     if (selectedServices.size > 0 || otherServiceRows.some(r => r.value.trim())) completed++
     if (formData.contact_info.address?.trim() || formData.contact_info.website?.trim()) completed++
 
@@ -381,7 +394,7 @@ export default function ForwarderProfilePage() {
   }
 
   const isRouteValid = (row: RouteRow) => {
-    return row.origin && row.destination
+    return row.destination // Origin is always "ID", only check destination
   }
 
   if (!isAuthenticated || !isForwarder() || loadingProfile) {
@@ -658,11 +671,11 @@ export default function ForwarderProfilePage() {
                   <Label className="text-[#0C4A6E] font-bold flex items-center gap-2 mb-2">
                     <Globe className="h-5 w-5 text-[#6366F1]" />
                     Specialization Routes <span className="text-red-500">*</span>
-                    {routeRows.some(r => r.origin && r.destination) && !errors.routes && (
+                    {routeRows.some(r => r.destination) && !errors.routes && (
                       <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
                     )}
                   </Label>
-                  <p className="text-sm text-gray-500 mb-4">Pilih origin dan destination untuk setiap route</p>
+                  <p className="text-sm text-gray-500 mb-4">Pilih destination untuk setiap route (Origin selalu Indonesia)</p>
                   
                   <div className="space-y-3">
                     {routeRows.map((row, index) => {
@@ -684,20 +697,11 @@ export default function ForwarderProfilePage() {
                                 </span>
                                 Origin
                               </Label>
-                              <Select
-                                value={row.origin}
-                                onChange={(e) => handleRouteChange(row.id, 'origin', e.target.value)}
-                                className={`rounded-xl border-2 ${
-                                  row.origin ? 'border-[#22C55E]' : 'border-[#e0f2fe]'
-                                }`}
-                              >
-                                <option value="">Pilih Origin</option>
-                                {countries.map((country) => (
-                                  <option key={country.country_code} value={country.country_code}>
-                                    {country.country_name} ({country.country_code})
-                                  </option>
-                                ))}
-                              </Select>
+                              <Input
+                                value="Indonesia - ID"
+                                disabled
+                                className="rounded-xl border-2 border-[#e0f2fe] bg-gray-100 text-gray-600 cursor-not-allowed"
+                              />
                             </div>
                             <div>
                               <Label className="text-xs font-bold text-gray-600 mb-1 block flex items-center gap-1">
@@ -707,11 +711,14 @@ export default function ForwarderProfilePage() {
                               <Select
                                 value={row.destination}
                                 onChange={(e) => handleRouteChange(row.id, 'destination', e.target.value)}
+                                disabled={loadingCountries || countries.length === 0}
                                 className={`rounded-xl border-2 ${
                                   row.destination ? 'border-[#22C55E]' : 'border-[#e0f2fe]'
-                                }`}
+                                } ${loadingCountries ? 'opacity-50 cursor-not-allowed' : ''}`}
                               >
-                                <option value="">Pilih Destination</option>
+                                <option value="">
+                                  {loadingCountries ? 'Memuat negara...' : 'Pilih Destination'}
+                                </option>
                                 {countries.map((country) => (
                                   <option key={country.country_code} value={country.country_code}>
                                     {country.country_name} ({country.country_code})

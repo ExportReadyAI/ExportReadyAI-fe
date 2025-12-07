@@ -28,12 +28,14 @@ interface AIDescriptionGeneratorProps {
   catalogId: number
   catalog: Catalog
   onUpdate: () => void
+  readOnly?: boolean
 }
 
 export function AIDescriptionGenerator({
   catalogId,
   catalog,
   onUpdate,
+  readOnly = false,
 }: AIDescriptionGeneratorProps) {
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -197,23 +199,25 @@ export function AIDescriptionGenerator({
             </div>
           )}
 
-          {/* Regenerate Button */}
-          <div className="flex justify-center">
-            <Button
-              onClick={handleGenerate}
-              disabled={generating}
-              variant="outline"
-              className="border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6] hover:text-white"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Regenerate dengan AI
-            </Button>
-          </div>
+          {/* Regenerate Button - Hidden for read-only users */}
+          {!readOnly && (
+            <div className="flex justify-center">
+              <Button
+                onClick={handleGenerate}
+                disabled={generating}
+                variant="outline"
+                className="border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6] hover:text-white"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Regenerate dengan AI
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Generate CTA - When no existing description */}
-      {!hasExistingDescription && !preview && (
+      {/* Generate CTA - When no existing description - Hidden for read-only users */}
+      {!hasExistingDescription && !preview && !readOnly && (
         <div className="bg-gradient-to-r from-[#f5f3ff] to-[#ede9fe] rounded-3xl border-2 border-[#ddd6fe] p-8 text-center">
           <div className="flex h-20 w-20 mx-auto items-center justify-center rounded-3xl bg-gradient-to-br from-[#8B5CF6] to-[#7c3aed] shadow-[0_6px_0_0_#6d28d9] mb-6">
             <Sparkles className="h-10 w-10 text-white" />
@@ -244,6 +248,13 @@ export function AIDescriptionGenerator({
           </Button>
         </div>
       )}
+      
+      {/* Read-only message when no description exists */}
+      {!hasExistingDescription && !preview && readOnly && (
+        <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-8 text-center">
+          <p className="text-[#0284C7] font-medium">Deskripsi belum tersedia untuk katalog ini.</p>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -260,37 +271,39 @@ export function AIDescriptionGenerator({
               <Eye className="h-5 w-5 text-[#8B5CF6]" />
               <span className="font-bold text-[#0C4A6E]">Preview Hasil AI</span>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="mr-1 h-4 w-4" />
-                Edit
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancel}
-              >
-                <X className="mr-1 h-4 w-4" />
-                Batal
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveDirectly}
-                disabled={saving}
-                className="bg-[#22C55E] hover:bg-[#16a34a]"
-              >
-                {saving ? (
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="mr-1 h-4 w-4" />
-                )}
-                Gunakan Hasil Ini
-              </Button>
-            </div>
+            {!readOnly && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Edit className="mr-1 h-4 w-4" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancel}
+                >
+                  <X className="mr-1 h-4 w-4" />
+                  Batal
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveDirectly}
+                  disabled={saving}
+                  className="bg-[#22C55E] hover:bg-[#16a34a]"
+                >
+                  {saving ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="mr-1 h-4 w-4" />
+                  )}
+                  Gunakan Hasil Ini
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Preview Export Description */}

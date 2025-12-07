@@ -61,6 +61,7 @@ import type {
   ProductPricing,
   CreateProductPricingRequest,
   Catalog,
+  ForwarderCatalog,
   CreateCatalogRequest,
   UpdateCatalogRequest,
   CatalogImage,
@@ -566,6 +567,21 @@ export const catalogService = {
 
   deleteVariantOption: (catalogId: string | number, typeId: string | number, optionId: string | number) =>
     del<{ message: string }>(API_ENDPOINTS.catalogs.variantOptionDetail(catalogId, typeId, optionId)),
+
+  // Forwarder-specific endpoints
+  listForForwarder: (params?: {
+    search?: string;
+    tag?: string;
+    min_price?: number;
+    max_price?: number;
+    seller?: string;
+    page?: number;
+    page_size?: number;
+  }) =>
+    get<{ count: number; next?: string | null; previous?: string | null; results: ForwarderCatalog[] }>(
+      API_ENDPOINTS.catalogs.forwarderList,
+      { params }
+    ),
 
   // Public endpoints
   listPublic: () =>

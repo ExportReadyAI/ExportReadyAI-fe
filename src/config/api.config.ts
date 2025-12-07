@@ -142,6 +142,8 @@ export const API_ENDPOINTS = {
     detail: (id: string | number) => `/catalogs/${id}/`,
     update: (id: string | number) => `/catalogs/${id}/`,
     delete: (id: string | number) => `/catalogs/${id}/`,
+    // Forwarder-specific
+    forwarderList: '/catalogs/forwarder/',
     // Images
     images: (catalogId: string | number) => `/catalogs/${catalogId}/images/`,
     imageDetail: (catalogId: string | number, imageId: string | number) => `/catalogs/${catalogId}/images/${imageId}/`,

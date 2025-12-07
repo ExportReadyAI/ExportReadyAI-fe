@@ -28,19 +28,26 @@ import {
   Shield,
   Loader2,
   CheckCircle,
+  Building2,
+  Mail,
+  MapPin,
+  User,
 } from "lucide-react"
-import type { Catalog } from "@/lib/api/types"
+import type { Catalog, ForwarderCatalog } from "@/lib/api/types"
 
 export default function CatalogDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const { isBuyer } = useAuthStore()
+  const { isBuyer, isForwarder, isUMKM } = useAuthStore()
   const catalogId = params.id as string
+  
+  // Check if user is buyer or forwarder (read-only access)
+  const isReadOnly = isBuyer() || isForwarder()
 
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [catalog, setCatalog] = useState<Catalog | null>(null)
+  const [catalog, setCatalog] = useState<Catalog | ForwarderCatalog | null>(null)
   const [publishing, setPublishing] = useState(false)
   const [activeTab, setActiveTab] = useState<"description" | "images" | "variants">("description")
 
@@ -66,13 +73,13 @@ export default function CatalogDetailPage() {
       setLoading(true)
       const response = await catalogService.get(catalogId)
 
-      let catalogData: Catalog | null = null
+      let catalogData: Catalog | ForwarderCatalog | null = null
 
       if (response && typeof response === 'object') {
         if ('success' in response && (response as any).success) {
           catalogData = (response as any).data
         } else if ('id' in response) {
-          catalogData = response as Catalog
+          catalogData = response as Catalog | ForwarderCatalog
         }
       }
 
@@ -165,11 +172,19 @@ export default function CatalogDetailPage() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => router.push(isBuyer() ? "/buyer-requests" : "/catalogs")}
+              onClick={() => {
+                if (isBuyer()) {
+                  router.push("/buyer-requests")
+                } else if (isForwarder()) {
+                  router.push("/forwarders/catalogs")
+                } else {
+                  router.push("/catalogs")
+                }
+              }}
               className="mb-4 text-[#0284C7] hover:text-[#0369a1] hover:bg-[#e0f2fe]"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {isBuyer() ? "Kembali ke Buyer Requests" : "Kembali ke Katalog"}
+              {isBuyer() ? "Kembali ke Buyer Requests" : isForwarder() ? "Kembali ke Katalog" : "Kembali ke Katalog"}
             </Button>
 
             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
@@ -201,8 +216,8 @@ export default function CatalogDetailPage() {
                 )}
               </div>
 
-              {/* Hide Edit/Publish buttons from buyers (read-only access) */}
-              {!isBuyer() && (
+              {/* Show Edit/Publish buttons only for UMKM users */}
+              {isUMKM() && (
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -279,6 +294,57 @@ export default function CatalogDetailPage() {
             </div>
           </div>
 
+          {/* Seller Information (for Forwarders) */}
+          {'seller_name' in catalog && catalog.seller_name && (
+            <div className="bg-gradient-to-r from-[#F0F9FF] to-[#e0f2fe] rounded-2xl border-2 border-[#7DD3FC] p-5 shadow-[0_4px_0_0_#7DD3FC] mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Building2 className="h-5 w-5 text-[#6366F1]" />
+                <h3 className="font-bold text-lg text-[#0C4A6E]">Informasi UMKM</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building2 className="h-4 w-4 text-[#6366F1]" />
+                    <span className="text-sm font-bold text-[#0C4A6E]">Nama Perusahaan</span>
+                  </div>
+                  <p className="text-[#0284C7] font-medium">{catalog.seller_name}</p>
+                </div>
+                {catalog.seller_full_name && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="h-4 w-4 text-[#6366F1]" />
+                      <span className="text-sm font-bold text-[#0C4A6E]">Nama Lengkap</span>
+                    </div>
+                    <p className="text-[#0284C7] font-medium">{catalog.seller_full_name}</p>
+                  </div>
+                )}
+                {catalog.seller_email && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mail className="h-4 w-4 text-[#6366F1]" />
+                      <span className="text-sm font-bold text-[#0C4A6E]">Email</span>
+                    </div>
+                    <a 
+                      href={`mailto:${catalog.seller_email}`}
+                      className="text-[#0284C7] font-medium hover:underline"
+                    >
+                      {catalog.seller_email}
+                    </a>
+                  </div>
+                )}
+                {catalog.seller_address && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin className="h-4 w-4 text-[#6366F1]" />
+                      <span className="text-sm font-bold text-[#0C4A6E]">Alamat</span>
+                    </div>
+                    <p className="text-[#0284C7] font-medium">{catalog.seller_address}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Tags */}
           {catalog.tags && catalog.tags.length > 0 && (
             <div className="bg-white rounded-2xl border-2 border-[#e0f2fe] p-4 shadow-[0_4px_0_0_#e0f2fe] mb-6">
@@ -341,6 +407,7 @@ export default function CatalogDetailPage() {
               catalogId={parseInt(catalogId)}
               catalog={catalog}
               onUpdate={fetchCatalog}
+              readOnly={isReadOnly}
             />
           )}
 
@@ -349,6 +416,7 @@ export default function CatalogDetailPage() {
               catalogId={parseInt(catalogId)}
               images={catalog.images || []}
               onUpdate={fetchCatalog}
+              readOnly={isReadOnly}
             />
           )}
 
@@ -357,6 +425,7 @@ export default function CatalogDetailPage() {
               catalogId={parseInt(catalogId)}
               variantTypes={catalog.variant_types || []}
               onUpdate={fetchCatalog}
+              readOnly={isReadOnly}
             />
           )}
         </div>

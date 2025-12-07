@@ -27,6 +27,7 @@ interface CatalogVariantsManagerProps {
   catalogId: number
   variantTypes?: VariantType[]
   onUpdate: () => void
+  readOnly?: boolean
 }
 
 const DEFAULT_PREDEFINED_TYPES: PredefinedVariantType[] = [
@@ -44,6 +45,7 @@ export function CatalogVariantsManager({
   catalogId,
   variantTypes: initialVariantTypes,
   onUpdate,
+  readOnly = false,
 }: CatalogVariantsManagerProps) {
   const [variantTypes, setVariantTypes] = useState<VariantType[]>(initialVariantTypes || [])
   const [predefinedTypes, setPredefinedTypes] = useState<PredefinedVariantType[]>(DEFAULT_PREDEFINED_TYPES)
@@ -283,8 +285,8 @@ export function CatalogVariantsManager({
         </Alert>
       )}
 
-      {/* Add Variant Type Button/Form */}
-      {!showAddForm ? (
+      {/* Add Variant Type Button/Form - Hidden for read-only users */}
+      {!readOnly && !showAddForm && (
         <Button
           onClick={() => setShowAddForm(true)}
           className="bg-[#22C55E] hover:bg-[#16a34a] shadow-[0_4px_0_0_#15803d]"
@@ -292,7 +294,9 @@ export function CatalogVariantsManager({
           <Plus className="mr-2 h-4 w-4" />
           Tambah Jenis Varian
         </Button>
-      ) : (
+      )}
+      
+      {!readOnly && showAddForm && (
         <div className="bg-white rounded-3xl border-2 border-[#e0f2fe] p-6 shadow-[0_4px_0_0_#e0f2fe]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-extrabold text-[#0C4A6E] flex items-center gap-2">
@@ -454,33 +458,38 @@ export function CatalogVariantsManager({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setEditingType(type.id)
-                      setEditTypeName(type.type_name)
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500 hover:text-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteType(type.id)
-                    }}
-                    disabled={deletingType === type.id}
-                  >
-                    {deletingType === type.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </Button>
+                  {/* Edit and Delete buttons - Hidden for read-only users */}
+                  {!readOnly && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingType(type.id)
+                          setEditTypeName(type.type_name)
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteType(type.id)
+                        }}
+                        disabled={deletingType === type.id}
+                      >
+                        {deletingType === type.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </>
+                  )}
                   {expandedTypes.has(type.id) ? (
                     <ChevronUp className="h-5 w-5 text-[#7DD3FC]" />
                   ) : (
@@ -502,75 +511,86 @@ export function CatalogVariantsManager({
                             : 'bg-gray-100 border-gray-300 text-gray-400 line-through'
                         }`}
                       >
-                        <button
-                          onClick={() => handleToggleOptionAvailability(type.id, option)}
-                          className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors ${
-                            option.is_available
-                              ? 'bg-[#22C55E] border-[#22C55E] text-white'
-                              : 'bg-white border-gray-300'
-                          }`}
-                        >
-                          {option.is_available && <Check className="h-3 w-3" />}
-                        </button>
-                        <span className="font-medium">{option.option_name}</span>
-                        <button
-                          onClick={() => handleDeleteOption(type.id, option.id)}
-                          className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity"
-                          disabled={deletingOption?.optionId === option.id}
-                        >
-                          {deletingOption?.optionId === option.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <X className="h-4 w-4" />
-                          )}
-                        </button>
+                        {/* Toggle availability and delete - Hidden for read-only users */}
+                        {!readOnly ? (
+                          <>
+                            <button
+                              onClick={() => handleToggleOptionAvailability(type.id, option)}
+                              className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors ${
+                                option.is_available
+                                  ? 'bg-[#22C55E] border-[#22C55E] text-white'
+                                  : 'bg-white border-gray-300'
+                              }`}
+                            >
+                              {option.is_available && <Check className="h-3 w-3" />}
+                            </button>
+                            <span className="font-medium">{option.option_name}</span>
+                            <button
+                              onClick={() => handleDeleteOption(type.id, option.id)}
+                              className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity"
+                              disabled={deletingOption?.optionId === option.id}
+                            >
+                              {deletingOption?.optionId === option.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <X className="h-4 w-4" />
+                              )}
+                            </button>
+                          </>
+                        ) : (
+                          <span className="font-medium">{option.option_name}</span>
+                        )}
                       </div>
                     ))}
                   </div>
 
-                  {/* Add Option */}
-                  {addingOptionTo === type.id ? (
-                    <div className="flex gap-2">
-                      <Input
-                        value={newOptionName}
-                        onChange={(e) => setNewOptionName(e.target.value)}
-                        placeholder="Nama pilihan baru"
-                        className="flex-1"
-                        autoFocus
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddOption(type.id)}
-                        disabled={savingOption}
-                        className="bg-[#22C55E] hover:bg-[#16a34a]"
-                      >
-                        {savingOption ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Check className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setAddingOptionTo(null)
-                          setNewOptionName("")
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAddingOptionTo(type.id)}
-                      className="border-dashed"
-                    >
-                      <Plus className="mr-1 h-4 w-4" />
-                      Tambah Pilihan
-                    </Button>
+                  {/* Add Option - Hidden for read-only users */}
+                  {!readOnly && (
+                    <>
+                      {addingOptionTo === type.id ? (
+                        <div className="flex gap-2">
+                          <Input
+                            value={newOptionName}
+                            onChange={(e) => setNewOptionName(e.target.value)}
+                            placeholder="Nama pilihan baru"
+                            className="flex-1"
+                            autoFocus
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddOption(type.id)}
+                            disabled={savingOption}
+                            className="bg-[#22C55E] hover:bg-[#16a34a]"
+                          >
+                            {savingOption ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setAddingOptionTo(null)
+                              setNewOptionName("")
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAddingOptionTo(type.id)}
+                          className="border-dashed"
+                        >
+                          <Plus className="mr-1 h-4 w-4" />
+                          Tambah Pilihan
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               )}
