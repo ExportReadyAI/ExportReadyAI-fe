@@ -621,8 +621,10 @@ export interface CreateProductPricingRequest {
 
 export interface CatalogImage {
   id: number;
-  catalog_id: number;
-  image_url: string;
+  catalog_id?: number;
+  image?: string; // File upload path
+  image_url?: string; // External URL
+  url: string; // Final URL to use (from image or image_url)
   alt_text?: string;
   sort_order: number;
   is_primary: boolean;

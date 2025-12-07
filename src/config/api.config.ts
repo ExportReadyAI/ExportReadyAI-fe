@@ -52,6 +52,7 @@ export const API_ENDPOINTS = {
     // AI Features
     marketIntelligence: (id: string | number) => `/products/${id}/ai/market-intelligence/`,
     pricing: (id: string | number) => `/products/${id}/ai/pricing/`,
+    catalogDescription: (id: string | number) => `/products/${id}/ai/catalog-description/`,
   },
   
   // Country endpoints
@@ -146,8 +147,6 @@ export const API_ENDPOINTS = {
     // Variants
     variants: (catalogId: string | number) => `/catalogs/${catalogId}/variants/`,
     variantDetail: (catalogId: string | number, variantId: string | number) => `/catalogs/${catalogId}/variants/${variantId}/`,
-    // AI Description
-    aiDescription: (catalogId: string | number) => `/catalogs/${catalogId}/ai/description/`,
     // Public
     publicList: '/catalogs/public/',
     publicDetail: (id: string | number) => `/catalogs/public/${id}/`,

@@ -226,6 +226,14 @@ export const productService = {
 
   createPricing: (id: string | number, data: CreateProductPricingRequest) =>
     post<ProductPricing>(API_ENDPOINTS.products.pricing(id), data),
+
+  // AI Catalog Description - generates export description, technical specs, safety info
+  generateCatalogDescription: (id: string | number, data?: { is_food_product?: boolean }) =>
+    post<AIDescriptionResponse>(
+      API_ENDPOINTS.products.catalogDescription(id),
+      data || {},
+      { timeout: 120000 } // 2 minutes for AI processing
+    ),
 };
 
 // ==================== Country Services ====================
@@ -493,8 +501,21 @@ export const catalogService = {
   listImages: (catalogId: string | number) =>
     get<CatalogImage[]>(API_ENDPOINTS.catalogs.images(catalogId)),
 
+  // Add image via URL
   addImage: (catalogId: string | number, data: CreateCatalogImageRequest) =>
     post<CatalogImage>(API_ENDPOINTS.catalogs.images(catalogId), data),
+
+  // Add image via file upload
+  uploadImage: (catalogId: string | number, file: File, options?: { alt_text?: string; is_primary?: boolean }) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    if (options?.alt_text) formData.append('alt_text', options.alt_text);
+    if (options?.is_primary !== undefined) formData.append('is_primary', String(options.is_primary));
+    return apiClient.post<ApiResponse<CatalogImage>>(
+      API_ENDPOINTS.catalogs.images(catalogId),
+      formData
+    );
+  },
 
   updateImage: (catalogId: string | number, imageId: string | number, data: UpdateCatalogImageRequest) =>
     put<CatalogImage>(API_ENDPOINTS.catalogs.imageDetail(catalogId, imageId), data),
@@ -514,10 +535,6 @@ export const catalogService = {
 
   deleteVariant: (catalogId: string | number, variantId: string | number) =>
     del<{ message: string }>(API_ENDPOINTS.catalogs.variantDetail(catalogId, variantId)),
-
-  // AI Description
-  generateDescription: (catalogId: string | number, data?: GenerateAIDescriptionRequest) =>
-    post<AIDescriptionResponse>(API_ENDPOINTS.catalogs.aiDescription(catalogId), data || {}),
 
   // Public endpoints
   listPublic: () =>

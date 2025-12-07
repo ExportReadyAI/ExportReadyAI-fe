@@ -15,7 +15,7 @@ import {
   ArrowLeft,
   Edit,
   Globe,
-  GlobeOff,
+  EyeOff,
   DollarSign,
   Package,
   Clock,
@@ -200,7 +200,7 @@ export default function CatalogDetailPage() {
                   {publishing ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : catalog.is_published ? (
-                    <GlobeOff className="mr-2 h-4 w-4" />
+                    <EyeOff className="mr-2 h-4 w-4" />
                   ) : (
                     <Globe className="mr-2 h-4 w-4" />
                   )}
