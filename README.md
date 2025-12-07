@@ -18,6 +18,12 @@
   </a>
 </p>
 
+## 📂 Source Code
+
+Anda dapat melihat kode sumber Backend kami di sini:
+
+* **Backend API Repository:** [ExportReadyAI/ExportReadyAI](https://github.com/ExportReadyAI/ExportReadyAI)
+
 ---
 
 ## Daftar Isi
