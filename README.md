@@ -36,9 +36,6 @@
 > **From Local Hero to Global Player.**
 > _Platform AI End-to-End untuk Menstandarkan Produk UMKM Indonesia agar Lolos Kurasi Buyer Internasional._
 
-![ExportReady AI Banner](https://via.placeholder.com/1000x300?text=ExportReady.AI+Dashboard+Preview) 
-*(Ganti link di atas dengan banner/screenshot aplikasi aslimu nanti)*
-
 ---
 
 ## 📖 Tentang Proyek
