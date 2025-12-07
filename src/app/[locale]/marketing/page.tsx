@@ -24,6 +24,8 @@ import {
 } from "lucide-react"
 import { MarketIntelligenceModal } from "@/components/shared/MarketIntelligenceModal"
 import { PricingModal } from "@/components/shared/PricingModal"
+import { NoProductModal } from "@/components/shared/NoProductModal"
+import { ProductNotEnrichedModal } from "@/components/shared/ProductNotEnrichedModal"
 import type { Product } from "@/lib/api/types"
 
 const CATEGORIES = [
@@ -55,6 +57,8 @@ export default function MarketingPage() {
   const [selectedProductName, setSelectedProductName] = useState<string>("")
   const [intelligenceModalOpen, setIntelligenceModalOpen] = useState(false)
   const [pricingModalOpen, setPricingModalOpen] = useState(false)
+  const [noProductModalOpen, setNoProductModalOpen] = useState(false)
+  const [notEnrichedModalOpen, setNotEnrichedModalOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -132,6 +136,11 @@ export default function MarketingPage() {
       setProducts(productsData)
       setTotalPages(totalPages)
       setTotalCount(totalCount)
+      
+      // Check if there are no products on first load
+      if (page === 1 && productsData.length === 0 && !searchTerm && categoryFilter === "all") {
+        setNoProductModalOpen(true)
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "Terjadi kesalahan")
     } finally {
@@ -146,12 +155,28 @@ export default function MarketingPage() {
   }
 
   const handleOpenIntelligence = (product: Product) => {
+    // Check if product is enriched
+    if (!product.is_enriched) {
+      setSelectedProductId(product.id)
+      setSelectedProductName(product.name_local)
+      setNotEnrichedModalOpen(true)
+      return
+    }
+    
     setSelectedProductId(product.id)
     setSelectedProductName(product.name_local)
     setIntelligenceModalOpen(true)
   }
 
   const handleOpenPricing = (product: Product) => {
+    // Check if product is enriched
+    if (!product.is_enriched) {
+      setSelectedProductId(product.id)
+      setSelectedProductName(product.name_local)
+      setNotEnrichedModalOpen(true)
+      return
+    }
+    
     setSelectedProductId(product.id)
     setSelectedProductName(product.name_local)
     setPricingModalOpen(true)
@@ -479,6 +504,18 @@ export default function MarketingPage() {
                 setSelectedProductName("")
               }
             }}
+          />
+
+          <NoProductModal
+            open={noProductModalOpen}
+            onOpenChange={setNoProductModalOpen}
+          />
+
+          <ProductNotEnrichedModal
+            open={notEnrichedModalOpen}
+            onOpenChange={setNotEnrichedModalOpen}
+            productId={selectedProductId ?? undefined}
+            productName={selectedProductName}
           />
         </div>
       </main>
