@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/lib/stores/auth.store"
 import { catalogService, productService } from "@/lib/api/services"
 import { Sidebar } from "@/components/layout/Sidebar"
+import { DeleteCatalogModal } from "@/components/shared/DeleteCatalogModal"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -36,6 +37,9 @@ export default function CatalogsPage() {
   const [totalCount, setTotalCount] = useState(0)
   const [mounted, setMounted] = useState(false)
   const [deleting, setDeleting] = useState<number | null>(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [catalogToDelete, setCatalogToDelete] = useState<Catalog | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -114,15 +118,24 @@ export default function CatalogsPage() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus katalog ini?")) return
+  const handleDelete = (catalog: Catalog) => {
+    setCatalogToDelete(catalog)
+    setDeleteError(null)
+    setDeleteModalOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!catalogToDelete) return
 
     try {
-      setDeleting(id)
-      await catalogService.delete(id)
-      fetchCatalogs()
+      setDeleting(catalogToDelete.id)
+      await catalogService.delete(catalogToDelete.id)
+      await fetchCatalogs()
+      setDeleteModalOpen(false)
+      setCatalogToDelete(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || "Gagal menghapus katalog")
+      const errorMessage = err.response?.data?.message || "Gagal menghapus katalog"
+      setDeleteError(errorMessage)
     } finally {
       setDeleting(null)
     }
@@ -320,7 +333,7 @@ export default function CatalogsPage() {
                           variant="outline"
                           size="icon"
                           className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => handleDelete(catalog.id)}
+                          onClick={() => handleDelete(catalog)}
                           disabled={deleting === catalog.id}
                         >
                           {deleting === catalog.id ? (
@@ -394,6 +407,15 @@ export default function CatalogsPage() {
           )}
         </div>
       </main>
+
+      <DeleteCatalogModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        catalogName={catalogToDelete?.display_name || ""}
+        onConfirm={confirmDelete}
+        loading={deleting !== null}
+        error={deleteError}
+      />
     </div>
   )
 }
