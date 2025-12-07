@@ -31,19 +31,58 @@
 
 ---
 
-## Tentang Proyek
+# 🚀 ExportReady.AI
 
-**ExportReadyAI** adalah solusi end-to-end untuk UMKM Indonesia yang ingin go global. Platform ini menggabungkan kecerdasan buatan dengan keahlian ekspor mendalam untuk menghilangkan kompleksitas yang menghambat pertumbuhan internasional.
+> **From Local Hero to Global Player.**
+> _Platform AI End-to-End untuk Menstandarkan Produk UMKM Indonesia agar Lolos Kurasi Buyer Internasional._
 
-### Mengapa ExportReadyAI?
+![ExportReady AI Banner](https://via.placeholder.com/1000x300?text=ExportReady.AI+Dashboard+Preview) 
+*(Ganti link di atas dengan banner/screenshot aplikasi aslimu nanti)*
 
-| Tantangan UMKM | Solusi ExportReadyAI |
-|----------------|----------------------|
-| Tidak tahu harus mulai dari mana | AI Assistant 24/7 untuk konsultasi |
-| Mencari HS Code memakan waktu berjam-jam | Generate HS Code otomatis dalam detik |
-| Tidak yakin produk bisa masuk negara tertentu | Analisis kepatuhan ekspor berbasis AI |
-| Menentukan harga seperti menebak-nebak | Kalkulator harga EXW, FOB, CIF real-time |
-| Sulit menemukan buyer terpercaya | Jaringan buyer & forwarder terverifikasi |
+---
+
+## 📖 Tentang Proyek
+
+**ExportReady.AI** bukan sekadar aplikasi pencatatan, melainkan sebuah **Ekosistem Pintar**. Kami hadir untuk menghancurkan tembok penghalang yang selama ini membuat UMKM takut untuk ekspor.
+
+Platform ini menggabungkan **Kecerdasan Buatan (Generative & Logic AI)** dengan keahlian logistik mendalam untuk mengubah proses ekspor yang rumit menjadi alur kerja yang sederhana, terukur, dan otomatis.
+
+Kami mengubah *"Saya tidak tahu caranya"* menjadi *"Produk saya siap kirim ke Jepang minggu depan"*.
+
+---
+
+## 💡 Mengapa ExportReady.AI Adalah "Game Changer"?
+
+Banyak UMKM punya produk bagus, tapi gagal di administrasi dan standar global. Kami menyelesaikan 5 masalah terbesar dalam ekspor:
+
+| ❌ The Nightmare (Tantangan Lama) | ✅ The AI Solution (ExportReady.AI) |
+| :--- | :--- |
+| **Buta Arah** <br> Tidak tahu harus mulai dari mana atau dokumen apa yang disiapkan. | **AI Export Consultant 24/7** 🤖 <br> Panduan langkah-demi-langkah (roadmap) yang dipersonalisasi. |
+| **Manual & Lambat** <br> Mencari HS Code yang tepat bisa memakan waktu berjam-jam. | **Instant HS Code Finder** ⚡ <br> Deteksi otomatis hanya dari deskripsi produk dalam hitungan detik. |
+| **Resiko Rejection** <br> Produk ditahan bea cukai karena kandungan/kemasan salah. | **AI Compliance Audit** 🛡️ <br> Analisis otomatis terhadap aturan ketat negara tujuan (misal: Jepang/EU). |
+| **Salah Harga = Rugi** <br> Menentukan harga jual ekspor seringkali hanya menebak-nebak. | **Smart Pricing Calculator** 💰 <br> Hitungan real-time dari HPP ke FOB/CIF + Estimasi kontainer. |
+| **Pasar Gelap** <br> Sulit menemukan pembeli yang valid dan logistik terpercaya. | **AI Market Connect** 🌍 <br> Matchmaking otomatis dengan Buyer & Forwarder terverifikasi. |
+
+---
+
+## 🔥 Fitur Unggulan (Core Modules)
+
+Aplikasi ini dibangun di atas 7 Modul Terintegrasi:
+
+### 🎓 1. Export Career Mode (Gamified)
+Sistem level & badge (**"Japan Ready"**, **"Halal Certified"**) yang mendorong UMKM meningkatkan kualitas agar dilirik buyer.
+
+### 📝 2. Intelligent Product Input (No-Photo Needed)
+Input spesifikasi produk dalam teks, AI langsung menstandarisasi deskripsi menjadi bahasa bisnis internasional (B2B English).
+
+### ⚖️ 3. AI Compliance Guardian
+Sistem "Logic Guard" yang mencegah UMKM mengirim barang yang dilarang atau tidak sesuai spesifikasi negara tujuan.
+
+### 💸 4. Export Calculator & Logistics
+Simulasi keuntungan anti-rugi. Menghitung biaya kardus, volume kontainer, hingga rekomendasi Forwarder terbaik.
+
+### 🤝 5. Smart RFQ Matching
+Bukan sekadar papan iklan. AI mencocokkan permintaan Buyer (RFQ) dengan produk UMKM yang spesifikasinya (HS Code & Grade) sesuai.
 
 ---
 
