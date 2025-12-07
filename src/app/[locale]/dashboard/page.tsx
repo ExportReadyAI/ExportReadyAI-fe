@@ -9,57 +9,60 @@ import { EducationalModulesAccordion } from "@/components/educational/Educationa
 import type { EducationalModule } from "@/lib/api/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { 
-  Package, 
-  FileText, 
-  Calculator, 
-  Building2, 
+import {
+  Package,
+  FileText,
+  Building2,
   ArrowRight,
   Sparkles,
   TrendingUp,
   Users,
   AlertCircle,
-  Rocket
+  Rocket,
+  BookMarked,
+  Globe,
+  DollarSign,
+  ShoppingBag,
+  Award,
+  BarChart3,
+  Truck
 } from "lucide-react"
 import type { DashboardSummaryUMKM, DashboardSummaryAdmin } from "@/lib/api/types"
 
 interface StatCardProps {
   title: string
   value: number | string
-  subtitle: string
   icon: React.ReactNode
   color: string
   shadowColor: string
   iconBg: string
+  subStats?: { label: string; value: number | string; highlight?: boolean }[]
 }
 
-function StatCard({ title, value, subtitle, icon, color, shadowColor, iconBg }: StatCardProps) {
+function StatCard({ title, value, icon, color, shadowColor, iconBg, subStats }: StatCardProps) {
   return (
-    <div 
+    <div
       className="bg-white rounded-3xl border-2 p-6 transition-all duration-200 hover:-translate-y-1 cursor-default"
-      style={{ 
+      style={{
         borderColor: color,
         boxShadow: `0 6px 0 0 ${shadowColor}`
       }}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-3">
+      <div className="flex items-start justify-between mb-4">
+        <div className="space-y-1">
           <p className="text-sm font-bold text-[#7DD3FC] uppercase tracking-wider">
             {title}
           </p>
-          <p 
+          <p
             className="text-4xl font-extrabold"
             style={{ color }}
           >
             {value}
           </p>
-          <p className="text-sm font-medium text-[#0C4A6E]/70">
-            {subtitle}
-          </p>
         </div>
-        <div 
+        <div
           className="flex h-14 w-14 items-center justify-center rounded-2xl"
-          style={{ 
+          style={{
             backgroundColor: iconBg,
             boxShadow: `0 4px 0 0 ${shadowColor}`
           }}
@@ -67,6 +70,18 @@ function StatCard({ title, value, subtitle, icon, color, shadowColor, iconBg }: 
           {icon}
         </div>
       </div>
+      {subStats && subStats.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 pt-3 border-t border-[#e0f2fe]">
+          {subStats.map((stat, idx) => (
+            <div key={idx} className="text-center p-2 bg-[#F0F9FF] rounded-xl">
+              <p className="text-xs text-[#7DD3FC] font-medium">{stat.label}</p>
+              <p className={`text-lg font-bold ${stat.highlight ? 'text-[#22C55E]' : 'text-[#0C4A6E]'}`}>
+                {stat.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -226,32 +241,56 @@ export default function DashboardPage() {
           )}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             {isAdmin() ? (
               <>
+                {/* Users Card */}
                 <StatCard
                   title="Total Users"
-                  value={adminSummary?.total_users ?? 0}
-                  subtitle="Pengguna terdaftar"
+                  value={adminSummary?.users?.total ?? 0}
                   icon={<Users className="h-7 w-7 text-white" />}
                   color="#0284C7"
                   shadowColor="#bae6fd"
                   iconBg="#0284C7"
+                  subStats={[
+                    { label: "UMKM", value: adminSummary?.users?.umkm ?? 0 },
+                    { label: "Buyers", value: adminSummary?.users?.buyers ?? 0 },
+                    { label: "Forwarders", value: adminSummary?.users?.forwarders ?? 0 },
+                    { label: "Profiles", value: adminSummary?.business_profiles?.total ?? 0 },
+                  ]}
                 />
+                {/* Products Card */}
                 <StatCard
-                  title="Total Products"
-                  value={adminSummary?.total_products ?? 0}
-                  subtitle="Produk terdaftar"
+                  title="Total Produk"
+                  value={adminSummary?.products?.total ?? 0}
                   icon={<Package className="h-7 w-7 text-white" />}
                   color="#22C55E"
                   shadowColor="#bbf7d0"
                   iconBg="#22C55E"
+                  subStats={[
+                    { label: "AI Enriched", value: adminSummary?.products?.with_enrichment ?? 0, highlight: true },
+                    { label: "Market Intel", value: adminSummary?.products?.with_market_intelligence ?? 0 },
+                    { label: "Pricing", value: adminSummary?.products?.with_pricing ?? 0 },
+                  ]}
                 />
+                {/* Catalogs Card */}
                 <StatCard
-                  title="Total Analysis"
-                  value={adminSummary?.total_analysis ?? 0}
-                  subtitle="Analisis ekspor"
-                  icon={<TrendingUp className="h-7 w-7 text-white" />}
+                  title="Total Katalog"
+                  value={adminSummary?.catalogs?.total ?? 0}
+                  icon={<BookMarked className="h-7 w-7 text-white" />}
+                  color="#8B5CF6"
+                  shadowColor="#ddd6fe"
+                  iconBg="#8B5CF6"
+                  subStats={[
+                    { label: "Published", value: adminSummary?.catalogs?.published ?? 0, highlight: true },
+                    { label: "Draft", value: adminSummary?.catalogs?.draft ?? 0 },
+                  ]}
+                />
+                {/* Buyer Requests Card */}
+                <StatCard
+                  title="Buyer Requests"
+                  value={adminSummary?.buyer_requests?.total ?? 0}
+                  icon={<ShoppingBag className="h-7 w-7 text-white" />}
                   color="#F59E0B"
                   shadowColor="#fde68a"
                   iconBg="#F59E0B"
@@ -259,32 +298,57 @@ export default function DashboardPage() {
               </>
             ) : (
               <>
+                {/* Products Card */}
                 <StatCard
-                  title="Jumlah Produk"
-                  value={umkmSummary?.product_count ?? 0}
-                  subtitle="Produk terdaftar"
+                  title="Produk Saya"
+                  value={umkmSummary?.products?.total ?? 0}
                   icon={<Package className="h-7 w-7 text-white" />}
                   color="#0284C7"
                   shadowColor="#bae6fd"
                   iconBg="#0284C7"
+                  subStats={[
+                    { label: "AI Enriched", value: umkmSummary?.products?.with_enrichment ?? 0, highlight: true },
+                    { label: "Market Intel", value: umkmSummary?.products?.with_market_intelligence ?? 0 },
+                    { label: "Pricing", value: umkmSummary?.products?.with_pricing ?? 0 },
+                  ]}
                 />
+                {/* Catalogs Card */}
                 <StatCard
-                  title="Jumlah Analisis"
-                  value={umkmSummary?.analysis_count ?? 0}
-                  subtitle="Analisis ekspor"
-                  icon={<FileText className="h-7 w-7 text-white" />}
+                  title="Katalog Saya"
+                  value={umkmSummary?.catalogs?.total ?? 0}
+                  icon={<BookMarked className="h-7 w-7 text-white" />}
+                  color="#8B5CF6"
+                  shadowColor="#ddd6fe"
+                  iconBg="#8B5CF6"
+                  subStats={[
+                    { label: "Published", value: umkmSummary?.catalogs?.published ?? 0, highlight: true },
+                    { label: "Draft", value: umkmSummary?.catalogs?.draft ?? 0 },
+                  ]}
+                />
+                {/* Business Profile Card */}
+                <StatCard
+                  title="Profil Bisnis"
+                  value={umkmSummary?.business_profile?.certification_count ?? 0}
+                  icon={<Award className="h-7 w-7 text-white" />}
                   color="#22C55E"
                   shadowColor="#bbf7d0"
                   iconBg="#22C55E"
+                  subStats={[
+                    { label: "Sertifikasi", value: umkmSummary?.business_profile?.certification_count ?? 0, highlight: true },
+                  ]}
                 />
+                {/* Buyer Requests Card */}
                 <StatCard
-                  title="Jumlah Costing"
-                  value={umkmSummary?.costing_count ?? 0}
-                  subtitle="Perhitungan biaya"
-                  icon={<Calculator className="h-7 w-7 text-white" />}
+                  title="Buyer Requests"
+                  value={umkmSummary?.buyer_requests?.pending ?? 0}
+                  icon={<ShoppingBag className="h-7 w-7 text-white" />}
                   color="#F59E0B"
                   shadowColor="#fde68a"
                   iconBg="#F59E0B"
+                  subStats={[
+                    { label: "Total", value: umkmSummary?.buyer_requests?.total ?? 0 },
+                    { label: "Open", value: umkmSummary?.buyer_requests?.pending ?? 0, highlight: true },
+                  ]}
                 />
               </>
             )}
@@ -296,57 +360,115 @@ export default function DashboardPage() {
               Aksi Cepat 🚀
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <button 
-                onClick={() => router.push("/products/create")}
-                className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0284C7]">
-                  <Package className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#0C4A6E]">Tambah Produk</p>
-                  <p className="text-xs text-[#7DD3FC]">Daftarkan produk baru</p>
-                </div>
-              </button>
+              {isAdmin() ? (
+                <>
+                  <button
+                    onClick={() => router.push("/users")}
+                    className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0284C7]">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#0C4A6E]">Kelola Users</p>
+                      <p className="text-xs text-[#7DD3FC]">Lihat semua pengguna</p>
+                    </div>
+                  </button>
 
-              <button 
-                onClick={() => router.push("/business-profile")}
-                className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#22C55E]">
-                  <Building2 className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#0C4A6E]">Profil Bisnis</p>
-                  <p className="text-xs text-[#7DD3FC]">Kelola profil usaha</p>
-                </div>
-              </button>
+                  <button
+                    onClick={() => router.push("/products")}
+                    className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#22C55E]">
+                      <Package className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#0C4A6E]">Lihat Produk</p>
+                      <p className="text-xs text-[#7DD3FC]">Semua produk UMKM</p>
+                    </div>
+                  </button>
 
-              <button 
-                onClick={() => router.push("/products")}
-                className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F59E0B]">
-                  <Sparkles className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#0C4A6E]">AI Enrichment</p>
-                  <p className="text-xs text-[#7DD3FC]">Analisis produk AI</p>
-                </div>
-              </button>
+                  <button
+                    onClick={() => router.push("/catalogs")}
+                    className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B5CF6]">
+                      <BookMarked className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#0C4A6E]">Lihat Katalog</p>
+                      <p className="text-xs text-[#7DD3FC]">Semua katalog ekspor</p>
+                    </div>
+                  </button>
 
-              <button 
-                onClick={() => router.push("/products")}
-                className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B5CF6]">
-                  <FileText className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#0C4A6E]">Daftar Produk</p>
-                  <p className="text-xs text-[#7DD3FC]">Lihat semua produk</p>
-                </div>
-              </button>
+                  <button
+                    onClick={() => router.push("/buyer-requests")}
+                    className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F59E0B]">
+                      <ShoppingBag className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#0C4A6E]">Buyer Requests</p>
+                      <p className="text-xs text-[#7DD3FC]">Lihat semua request</p>
+                    </div>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => router.push("/products/create")}
+                    className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0284C7]">
+                      <Package className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#0C4A6E]">Tambah Produk</p>
+                      <p className="text-xs text-[#7DD3FC]">Daftarkan produk baru</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => router.push("/catalogs/create")}
+                    className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B5CF6]">
+                      <BookMarked className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#0C4A6E]">Buat Katalog</p>
+                      <p className="text-xs text-[#7DD3FC]">Katalog ekspor baru</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => router.push("/marketing")}
+                    className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EC4899]">
+                      <TrendingUp className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#0C4A6E]">Marketing AI</p>
+                      <p className="text-xs text-[#7DD3FC]">Insight pasar & harga</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => router.push("/buyer-requests")}
+                    className="flex items-center gap-3 p-4 rounded-2xl border-2 border-[#7DD3FC] bg-[#F0F9FF] hover:bg-[#e0f2fe] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_0_#bae6fd] text-left"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F59E0B]">
+                      <ShoppingBag className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#0C4A6E]">Buyer Requests</p>
+                      <p className="text-xs text-[#7DD3FC]">Lihat permintaan buyer</p>
+                    </div>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 

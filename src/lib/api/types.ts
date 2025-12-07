@@ -96,17 +96,53 @@ export interface UpdateCertificationsRequest {
 
 // Dashboard Types
 export interface DashboardSummaryUMKM {
-  product_count: number;
-  analysis_count: number;
-  costing_count: number;
   has_business_profile: boolean;
+  business_profile: {
+    id: number;
+    company_name: string;
+    certification_count: number;
+  } | null;
+  products: {
+    total: number;
+    with_enrichment: number;
+    with_market_intelligence: number;
+    with_pricing: number;
+  };
+  catalogs: {
+    total: number;
+    published: number;
+    draft: number;
+  };
+  buyer_requests: {
+    total: number;
+    pending: number;
+  };
 }
 
 export interface DashboardSummaryAdmin {
-  total_users: number;
-  total_products: number;
-  total_analysis: number;
-  has_business_profile: boolean;
+  users: {
+    total: number;
+    umkm: number;
+    buyers: number;
+    forwarders: number;
+  };
+  business_profiles: {
+    total: number;
+  };
+  products: {
+    total: number;
+    with_enrichment: number;
+    with_market_intelligence: number;
+    with_pricing: number;
+  };
+  catalogs: {
+    total: number;
+    published: number;
+    draft: number;
+  };
+  buyer_requests: {
+    total: number;
+  };
 }
 
 // Product Types
