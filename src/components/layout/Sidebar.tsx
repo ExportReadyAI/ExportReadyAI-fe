@@ -19,6 +19,7 @@ import {
   BookOpen,
   TrendingUp,
   BookMarked,
+  MessageSquare,
 } from "lucide-react"
 
 const menuItems = [
@@ -63,6 +64,13 @@ const menuItems = [
     icon: TrendingUp,
     roles: ["Admin", "UMKM"],
     color: "#EC4899",
+  },
+  {
+    title: "Asisten AI",
+    href: "/chat",
+    icon: MessageSquare,
+    roles: ["UMKM"],
+    color: "#F59E0B",
   },
   {
     title: "Buyer Requests",

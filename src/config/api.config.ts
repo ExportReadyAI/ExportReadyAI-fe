@@ -154,6 +154,14 @@ export const API_ENDPOINTS = {
     publicList: '/catalogs/public/',
     publicDetail: (id: string | number) => `/catalogs/public/${id}/`,
   },
+
+  // Chatbot endpoints
+  chat: {
+    send: '/chat/send/',
+    sessions: '/chat/sessions/',
+    sessionDetail: (id: string | number) => `/chat/sessions/${id}/`,
+    suggestions: '/chat/suggestions/',
+  },
 } as const;
 
 

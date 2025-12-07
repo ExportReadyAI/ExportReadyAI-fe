@@ -897,4 +897,48 @@ export interface GenerateAIDescriptionRequest {
   save_to_catalog?: boolean;
 }
 
+// ==================== Chatbot Types ====================
+
+export interface ChatMessage {
+  id?: number;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  created_at?: string;
+  metadata?: {
+    response_time?: number;
+    model?: string;
+    tokens_used?: number;
+  } | null;
+}
+
+export interface ChatSession {
+  id: number;
+  title: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  messages?: ChatMessage[];
+  message_count: number;
+  last_message?: {
+    role: string;
+    content: string;
+    created_at: string;
+  } | null;
+}
+
+export interface SendMessageRequest {
+  message: string;
+  session_id?: number | null;
+}
+
+export interface SendMessageResponse {
+  message: string;
+  session_id: number;
+  response_time: number;
+}
+
+export interface ChatSuggestionsResponse {
+  suggestions: string[];
+}
+
 

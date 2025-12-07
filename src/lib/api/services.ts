@@ -75,6 +75,11 @@ import type {
   UpdateVariantOptionRequest,
   AIDescriptionResponse,
   GenerateAIDescriptionRequest,
+  ChatSession,
+  ChatMessage,
+  SendMessageRequest,
+  SendMessageResponse,
+  ChatSuggestionsResponse,
 } from './types';
 
 /**
@@ -573,6 +578,56 @@ export const catalogService = {
 
   getPublic: (id: string | number) =>
     get<Catalog>(API_ENDPOINTS.catalogs.publicDetail(id)),
+};
+
+// ==================== Chatbot Services ====================
+
+export const chatService = {
+  // Send message to chatbot
+  sendMessage: async (data: SendMessageRequest): Promise<SendMessageResponse> => {
+    const response = await apiClient.post<ApiResponse<SendMessageResponse>>(
+      API_ENDPOINTS.chat.send,
+      data,
+      { timeout: 120000 } // 2 minutes for AI response
+    );
+    return response.data.data;
+  },
+
+  // List all sessions
+  getSessions: async (): Promise<ChatSession[]> => {
+    const response = await apiClient.get<ApiResponse<ChatSession[]>>(API_ENDPOINTS.chat.sessions);
+    return response.data.data;
+  },
+
+  // Get session detail with messages
+  getSession: async (sessionId: number): Promise<ChatSession> => {
+    const response = await apiClient.get<ApiResponse<ChatSession>>(
+      API_ENDPOINTS.chat.sessionDetail(sessionId)
+    );
+    return response.data.data;
+  },
+
+  // Create new session
+  createSession: async (title?: string): Promise<ChatSession> => {
+    const response = await apiClient.post<ApiResponse<ChatSession>>(
+      API_ENDPOINTS.chat.sessions,
+      { title }
+    );
+    return response.data.data;
+  },
+
+  // Delete session
+  deleteSession: async (sessionId: number): Promise<void> => {
+    await apiClient.delete(API_ENDPOINTS.chat.sessionDetail(sessionId));
+  },
+
+  // Get suggested questions
+  getSuggestions: async (): Promise<string[]> => {
+    const response = await apiClient.get<ApiResponse<ChatSuggestionsResponse>>(
+      API_ENDPOINTS.chat.suggestions
+    );
+    return response.data.data.suggestions;
+  },
 };
 
 
