@@ -27,12 +27,7 @@ import { PricingModal } from "@/components/shared/PricingModal"
 import { NoProductModal } from "@/components/shared/NoProductModal"
 import { ProductNotEnrichedModal } from "@/components/shared/ProductNotEnrichedModal"
 import type { Product } from "@/lib/api/types"
-
-const CATEGORIES = [
-  { id: 1, name: "Makanan Olahan" },
-  { id: 2, name: "Kerajinan Tangan" },
-  { id: 3, name: "Tekstil" },
-]
+import { CATEGORIES, getCategoryName } from "@/lib/constants/categories"
 
 type TabType = "intelligence" | "pricing"
 
@@ -362,7 +357,7 @@ export default function MarketingPage() {
                             {product.name_local}
                           </h3>
                           <Badge variant="secondary" className="text-xs">
-                            {product.category?.name || `Kategori ${product.category_id}`}
+                            {product.category?.name || getCategoryName(product.category_id)}
                           </Badge>
                         </div>
                         {product.enrichment && (

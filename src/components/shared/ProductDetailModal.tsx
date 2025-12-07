@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 import { DeleteProductModal } from "@/components/shared/DeleteProductModal"
 import type { Product } from "@/lib/api/types"
+import { getCategoryName } from "@/lib/constants/categories"
 
 interface ProductDetailModalProps {
   productId: number | null
@@ -272,7 +273,7 @@ export function ProductDetailModal({
                     <div>
                       <p className="text-xs font-bold text-[#7DD3FC] uppercase">Kategori</p>
                       <Badge variant="secondary">
-                        {product.category?.name || `Kategori ${product.category_id}`}
+                        {product.category?.name || getCategoryName(product.category_id)}
                       </Badge>
                     </div>
                   </div>

@@ -13,12 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Search, Eye, Package, ChevronLeft, ChevronRight, Sparkles, Rocket } from "lucide-react"
 import { ProductDetailModal } from "@/components/shared/ProductDetailModal"
 import type { Product } from "@/lib/api/types"
-
-const CATEGORIES = [
-  { id: 1, name: "Makanan Olahan" },
-  { id: 2, name: "Kerajinan Tangan" },
-  { id: 3, name: "Tekstil" },
-]
+import { CATEGORIES, getCategoryName } from "@/lib/constants/categories"
 
 export default function ProductsPage() {
   const router = useRouter()
@@ -299,7 +294,7 @@ export default function ProductsPage() {
                             {product.name_local}
                           </h3>
                           <Badge variant="secondary" className="text-xs">
-                            {product.category?.name || `Kategori ${product.category_id}`}
+                            {product.category?.name || getCategoryName(product.category_id)}
                           </Badge>
                         </div>
                         {product.enrichment && (

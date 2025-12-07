@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { DeleteProductModal } from "@/components/shared/DeleteProductModal"
 import type { Product } from "@/lib/api/types"
+import { getCategoryName } from "@/lib/constants/categories"
 
 export default function ProductDetailPage() {
   const router = useRouter()
@@ -190,7 +191,7 @@ export default function ProductDetailPage() {
                     Kategori
                   </p>
                   <p className="text-base">
-                    {product.category?.name || `Category ID: ${product.category_id}`}
+                    {product.category?.name || getCategoryName(product.category_id)}
                   </p>
                 </div>
               </CardContent>
