@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Wrench, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { productService } from "@/lib/api/services"
-import type { UpdateProductRequest, ComplianceIssue } from "@/lib/api/types"
+import type { UpdateProductRequest, ComplianceIssue, Product } from "@/lib/api/types"
 
 interface BatchComplianceRepairModalProps {
   open: boolean
@@ -54,6 +54,26 @@ export function BatchComplianceRepairModal({
   const [fields, setFields] = useState<FieldEdit[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null)
+
+  // Fetch current product data untuk merge quality_specs
+  const fetchProductData = useCallback(async () => {
+    try {
+      const response = await productService.get(productId)
+      // Handle wrapped or direct response
+      const productData = 'data' in response ? (response as { data: Product }).data : response
+      setCurrentProduct(productData as Product)
+    } catch (err) {
+      console.error('Failed to fetch product data:', err)
+    }
+  }, [productId])
+
+  // Fetch product saat modal dibuka
+  useEffect(() => {
+    if (open && productId) {
+      void fetchProductData()
+    }
+  }, [open, productId, fetchProductData])
 
   // Initialize fields from compliance issues
   useEffect(() => {
@@ -92,7 +112,8 @@ export function BatchComplianceRepairModal({
 
       // Build update payload with all changed fields
       const updateData = buildBatchUpdatePayload(
-        fields.filter(f => f.hasChanged)
+        fields.filter(f => f.hasChanged),
+        currentProduct
       )
 
       // Update product using PATCH (partial update)
@@ -289,9 +310,15 @@ function getFieldPathFromIssue(issue: ComplianceIssue): string {
 }
 
 // Helper: Build batch update payload - combine all changed fields
-function buildBatchUpdatePayload(changedFields: FieldEdit[]): Record<string, unknown> {
+function buildBatchUpdatePayload(
+  changedFields: FieldEdit[],
+  currentProduct: Product | null
+): Record<string, unknown> {
   const updateData: Record<string, unknown> = {}
-  const qualitySpecs: Record<string, unknown> = {}
+  const qualitySpecs: Record<string, unknown> = {
+    // Start with existing quality_specs dari currentProduct
+    ...(currentProduct?.quality_specs || {})
+  }
   const dimensions: Record<string, unknown> = {}
 
   changedFields.forEach(field => {
@@ -301,6 +328,7 @@ function buildBatchUpdatePayload(changedFields: FieldEdit[]): Record<string, unk
     if (path.includes('.')) {
       const [parent, child] = path.split('.')
       if (parent === 'quality_specs') {
+        // Merge ke existing quality_specs
         qualitySpecs[child] = currentValue
       } else if (parent === 'dimensions_l_w_h') {
         dimensions[child] = parseFloat(String(currentValue)) || 0
@@ -311,7 +339,7 @@ function buildBatchUpdatePayload(changedFields: FieldEdit[]): Record<string, unk
     }
   })
 
-  // Add nested objects if they have data
+  // Always include quality_specs if there are changes (merged dengan existing)
   if (Object.keys(qualitySpecs).length > 0) {
     updateData.quality_specs = qualitySpecs
   }

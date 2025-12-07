@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useAuthStore } from "@/lib/stores/auth.store"
-import { exportAnalysisService } from "@/lib/api/services"
+import { exportAnalysisService, productService } from "@/lib/api/services"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,7 +13,8 @@ import { CircularProgress } from "@/components/shared/CircularProgress"
 import { DeleteAnalysisModal } from "@/components/shared/DeleteAnalysisModal"
 import { ReanalyzeModal } from "@/components/shared/ReanalyzeModal"
 import { ProductChangedAlert } from "@/components/shared/ProductChangedAlert"
-import { BatchComplianceRepairModal } from "@/components/shared/BatchComplianceRepairModal"
+import { InlineComplianceEditor } from "@/components/shared/InlineComplianceEditor"
+import ReactMarkdown from "react-markdown"
 import {
   ArrowLeft,
   FileText,
@@ -28,7 +29,7 @@ import {
   RefreshCw,
   BookOpen,
 } from "lucide-react"
-import type { ExportAnalysis } from "@/lib/api/types"
+import type { ExportAnalysis, Product } from "@/lib/api/types"
 
 export default function ExportAnalysisDetailPage() {
   const router = useRouter()
@@ -40,7 +41,7 @@ export default function ExportAnalysisDetailPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [reanalyzeModalOpen, setReanalyzeModalOpen] = useState(false)
   const [reanalyzing, setReanalyzing] = useState(false)
-  const [batchRepairOpen, setBatchRepairOpen] = useState(false)
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null)
 
   const analysisId = params?.id as string
 
@@ -63,15 +64,34 @@ export default function ExportAnalysisDetailPage() {
 
       if (response && typeof response === 'object') {
         if ('success' in response && (response as any).success) {
-          setAnalysis((response as any).data)
+          const analysisData = (response as any).data
+          setAnalysis(analysisData)
+          // Fetch product data
+          if (analysisData?.product || analysisData?.product_id) {
+            await fetchProductData(analysisData.product || analysisData.product_id)
+          }
         } else {
           setAnalysis(response as ExportAnalysis)
+          // Fetch product data
+          if ((response as ExportAnalysis)?.product || (response as ExportAnalysis)?.product_id) {
+            await fetchProductData((response as ExportAnalysis).product || (response as ExportAnalysis).product_id!)
+          }
         }
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Terjadi kesalahan")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchProductData = async (productId: number) => {
+    try {
+      const response = await productService.get(productId)
+      const productData = 'data' in response ? (response as any).data : response
+      setCurrentProduct(productData)
+    } catch (err) {
+      console.error('Failed to fetch product:', err)
     }
   }
 
@@ -106,18 +126,6 @@ export default function ExportAnalysisDetailPage() {
   // Helper: Get product ID (support both field names)
   const getProductId = () => {
     return analysis?.product || analysis?.product_id || 0
-  }
-
-  // Handler untuk Batch Repair: Fix All -> Save -> Re-analyze
-  const handleBatchRepair = () => {
-    setBatchRepairOpen(true)
-  }
-
-  const handleRepairComplete = async () => {
-    // After repair, refresh analysis data (no auto re-analyze)
-    setBatchRepairOpen(false)
-    // Refresh analysis to show product_changed warning
-    await fetchAnalysis()
   }
 
   const getScoreColor = (score: number) => {
@@ -291,77 +299,89 @@ export default function ExportAnalysisDetailPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Compliance Issues */}
-            <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe]">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-[#EF4444]" />
-                    Compliance Issues
-                  </CardTitle>
-                  {!isAdmin() && analysis.compliance_issues && analysis.compliance_issues.length > 0 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleBatchRepair}
-                      className="text-xs"
-                    >
-                      🔧 Fix All Issues
-                    </Button>
-                  )}
+          {/* Compliance Issues & Inline Editor */}
+          <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe] lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-[#EF4444]" />
+                Compliance Issues & Product Attributes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!isAdmin() && analysis.compliance_issues && analysis.compliance_issues.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Show issues summary */}
+                  <div className="bg-[#FEF3C7] border-2 border-[#F59E0B] rounded-2xl p-4">
+                    <h4 className="font-bold text-[#92400E] mb-2">Found {analysis.compliance_issues.length} Issues:</h4>
+                    <ul className="space-y-1">
+                      {analysis.compliance_issues.map((issue, index) => (
+                        <li key={index} className="text-sm text-[#92400E] flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                          <span><strong>{issue.type}:</strong> {issue.description}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Inline Editor */}
+                  <InlineComplianceEditor
+                    productId={getProductId()}
+                    complianceIssues={analysis.compliance_issues}
+                    currentProduct={currentProduct}
+                    onSaveComplete={fetchAnalysis}
+                  />
                 </div>
-              </CardHeader>
-              <CardContent>
-                {analysis.compliance_issues && analysis.compliance_issues.length > 0 ? (
-                  <div className="space-y-3">
-                    {analysis.compliance_issues.map((issue, index) => (
-                      <div
-                        key={index}
-                        className="bg-[#F0F9FF] rounded-2xl p-4 border-2 border-[#e0f2fe]"
-                      >
-                        <div className="flex items-start gap-3">
-                          {getSeverityIcon(issue.severity)}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge variant={getSeverityBadgeVariant(issue.severity) as any}>
-                                {issue.severity}
-                              </Badge>
-                              <span className="text-sm font-bold text-[#0C4A6E]">
-                                {issue.type}
-                              </span>
-                            </div>
-                            <p className="text-sm text-[#0C4A6E] mb-2">
-                              {issue.description}
-                            </p>
-                            {issue.your_value && issue.required_value && (
-                              <>
-                                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                                  <div className="bg-white rounded-xl p-2">
-                                    <p className="font-bold text-[#7DD3FC]">Your Value</p>
-                                    <p className="font-bold text-[#0C4A6E]">{issue.your_value}</p>
-                                  </div>
-                                  <div className="bg-white rounded-xl p-2">
-                                    <p className="font-bold text-[#7DD3FC]">Required</p>
-                                    <p className="font-bold text-[#0C4A6E]">{issue.required_value}</p>
-                                  </div>
-                                </div>
-                              </>
-                            )}
+              ) : analysis.compliance_issues && analysis.compliance_issues.length > 0 ? (
+                <div className="space-y-3">
+                  {analysis.compliance_issues.map((issue, index) => (
+                    <div
+                      key={index}
+                      className="bg-[#F0F9FF] rounded-2xl p-4 border-2 border-[#e0f2fe]"
+                    >
+                      <div className="flex items-start gap-3">
+                        {getSeverityIcon(issue.severity)}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant={getSeverityBadgeVariant(issue.severity) as any}>
+                              {issue.severity}
+                            </Badge>
+                            <span className="text-sm font-bold text-[#0C4A6E]">
+                              {issue.type}
+                            </span>
                           </div>
+                          <p className="text-sm text-[#0C4A6E] mb-2">
+                            {issue.description}
+                          </p>
+                          {issue.your_value && issue.required_value && (
+                            <>
+                              <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                                <div className="bg-white rounded-xl p-2">
+                                  <p className="font-bold text-[#7DD3FC]">Your Value</p>
+                                  <p className="font-bold text-[#0C4A6E]">{issue.your_value}</p>
+                                </div>
+                                <div className="bg-white rounded-xl p-2">
+                                  <p className="font-bold text-[#7DD3FC]">Required</p>
+                                  <p className="font-bold text-[#0C4A6E]">{issue.required_value}</p>
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <CheckCircle2 className="h-12 w-12 text-[#22C55E] mx-auto mb-3" />
-                    <p className="font-bold text-[#0C4A6E]">Tidak Ada Issues!</p>
-                    <p className="text-sm text-[#7DD3FC]">Produk memenuhi semua regulasi</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="h-12 w-12 text-[#22C55E] mx-auto mb-3" />
+                  <p className="font-bold text-[#0C4A6E]">Tidak Ada Issues!</p>
+                  <p className="text-sm text-[#7DD3FC]">Produk memenuhi semua regulasi</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-6 lg:grid-cols-1">
 
             {/* Recommendations */}
             <Card className="bg-white rounded-3xl border-2 border-[#e0f2fe] shadow-[0_4px_0_0_#e0f2fe]">
@@ -374,14 +394,24 @@ export default function ExportAnalysisDetailPage() {
               <CardContent>
                 {analysis.recommendations ? (
                   <div className="bg-[#F0F9FF] rounded-2xl p-4">
-                    <div className="prose prose-sm max-w-none">
-                      <ol className="list-decimal list-inside space-y-2 text-[#0C4A6E]">
-                        {analysis.recommendations.split('\n').filter(line => line.trim()).map((rec, index) => (
-                          <li key={index} className="font-medium">
-                            {rec.trim()}
-                          </li>
-                        ))}
-                      </ol>
+                    <div className="prose prose-sm max-w-none text-[#0C4A6E]">
+                      <ReactMarkdown
+                        components={{
+                          h1: ({...props}) => <h1 className="text-xl font-bold text-[#0C4A6E] mb-3" {...props} />,
+                          h2: ({...props}) => <h2 className="text-lg font-bold text-[#0C4A6E] mb-2" {...props} />,
+                          h3: ({...props}) => <h3 className="text-base font-bold text-[#0284C7] mb-2" {...props} />,
+                          p: ({...props}) => <p className="text-sm text-[#0C4A6E] mb-2 leading-relaxed" {...props} />,
+                          ul: ({...props}) => <ul className="list-disc list-inside space-y-1 mb-3" {...props} />,
+                          ol: ({...props}) => <ol className="list-decimal list-inside space-y-1 mb-3" {...props} />,
+                          li: ({...props}) => <li className="text-sm text-[#0C4A6E] font-medium" {...props} />,
+                          strong: ({...props}) => <strong className="font-bold text-[#0369a1]" {...props} />,
+                          em: ({...props}) => <em className="italic text-[#0284C7]" {...props} />,
+                          code: ({...props}) => <code className="bg-[#E0F2FE] px-2 py-1 rounded text-xs font-mono text-[#0C4A6E]" {...props} />,
+                          blockquote: ({...props}) => <blockquote className="border-l-4 border-[#0284C7] pl-4 italic text-[#64748b]" {...props} />,
+                        }}
+                      >
+                        {analysis.recommendations}
+                      </ReactMarkdown>
                     </div>
                   </div>
                 ) : (
@@ -414,14 +444,6 @@ export default function ExportAnalysisDetailPage() {
             onConfirm={handleReanalyze}
             productName={analysis.product_name}
             countryName={analysis.country_name}
-          />
-
-          <BatchComplianceRepairModal
-            open={batchRepairOpen}
-            onOpenChange={setBatchRepairOpen}
-            productId={getProductId()}
-            complianceIssues={analysis.compliance_issues || []}
-            onRepairComplete={handleRepairComplete}
           />
         </div>
       </main>

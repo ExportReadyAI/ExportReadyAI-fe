@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select } from "@/components/ui/select"
+import { Combobox } from "@/components/ui/combobox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Minus, Package, ArrowLeft, Rocket, FileText, Ruler, Layers, Box, CheckCircle2 } from "lucide-react"
 import type { CreateProductRequest, QualitySpecs } from "@/lib/api/types"
@@ -522,20 +522,20 @@ export default function CreateProductPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="category_id">Kategori *</Label>
-                  <Select
-                    id="category_id"
-                    name="category_id"
-                    value={formData.category_id.toString()}
-                    onChange={handleChange}
-                    required
+                  <Combobox
+                    options={CATEGORIES.map(cat => ({
+                      value: cat.id,
+                      label: cat.name
+                    }))}
+                    value={formData.category_id}
+                    onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, category_id: Number(value) }))
+                    }}
+                    placeholder="Pilih kategori produk..."
+                    searchPlaceholder="Cari kategori..."
+                    emptyText="Kategori tidak ditemukan."
                     disabled={loading}
-                  >
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </Select>
+                  />
                 </div>
               </div>
 
@@ -753,20 +753,20 @@ export default function CreateProductPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="packaging_type">Jenis Kemasan *</Label>
-                  <Select
-                    id="packaging_type"
-                    name="packaging_type"
+                  <Combobox
+                    options={PACKAGING_TYPES.map(type => ({
+                      value: type,
+                      label: type
+                    }))}
                     value={formData.packaging_type}
-                    onChange={handleChange}
-                    required
+                    onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, packaging_type: String(value) }))
+                    }}
+                    placeholder="Pilih jenis kemasan..."
+                    searchPlaceholder="Cari kemasan..."
+                    emptyText="Kemasan tidak ditemukan."
                     disabled={loading}
-                  >
-                    {PACKAGING_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </Select>
+                  />
                 </div>
 
                 <div className="space-y-2">
