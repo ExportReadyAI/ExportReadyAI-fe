@@ -22,6 +22,9 @@ interface BatchComplianceRepairModalProps {
 interface FieldEdit {
   path: string
   label: string
+  description: string // Description dari compliance issue
+  severity: string // Severity level (critical, major, minor)
+  requiredValue: string | number // Required value dari backend
   originalValue: string | number
   currentValue: string | number
   hasChanged: boolean
@@ -60,6 +63,9 @@ export function BatchComplianceRepairModal({
         .map(issue => ({
           path: getFieldPathFromIssue(issue),
           label: issue.type,
+          description: issue.description,
+          severity: issue.severity,
+          requiredValue: issue.required_value || "",
           originalValue: issue.your_value || "",
           currentValue: issue.your_value || "",
           hasChanged: false,
@@ -149,14 +155,44 @@ export function BatchComplianceRepairModal({
                 >
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor={`field-${index}`} className="text-[#0C4A6E] font-bold flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-[#F59E0B]" />
+                      <AlertTriangle className={`h-4 w-4 ${
+                        field.severity === 'critical' ? 'text-[#EF4444]' : 
+                        field.severity === 'major' ? 'text-[#F59E0B]' : 
+                        'text-[#0284C7]'
+                      }`} />
                       {field.label}
                     </Label>
-                    {field.hasChanged && (
-                      <Badge variant="accent" className="text-xs">
-                        Modified
+                    <div className="flex items-center gap-2">
+                      <Badge variant={
+                        field.severity === 'critical' ? 'destructive' : 
+                        field.severity === 'major' ? 'accent' : 
+                        'outline'
+                      } className="text-xs">
+                        {field.severity}
                       </Badge>
-                    )}
+                      {field.hasChanged && (
+                        <Badge variant="accent" className="text-xs">
+                          Modified
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Issue Description */}
+                  <div className="bg-white/70 rounded-xl p-3 mb-3 border border-[#BAE6FD]">
+                    <p className="text-sm text-[#0C4A6E] leading-relaxed">
+                      <strong className="text-[#0284C7]">Issue:</strong> {field.description}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div className="text-xs">
+                        <span className="text-[#7DD3FC] font-semibold">Current Value:</span>
+                        <p className="text-[#0C4A6E] font-mono mt-1 wrap-break-word">{String(field.originalValue)}</p>
+                      </div>
+                      <div className="text-xs">
+                        <span className="text-[#22C55E] font-semibold">Required Value:</span>
+                        <p className="text-[#0C4A6E] font-mono mt-1 wrap-break-word">{String(field.requiredValue)}</p>
+                      </div>
+                    </div>
                   </div>
 
                   {isMultilineField(field.path) ? (
@@ -175,12 +211,6 @@ export function BatchComplianceRepairModal({
                       placeholder={`Masukkan ${field.label.toLowerCase()}...`}
                       className="border-2 border-[#e0f2fe] focus:border-[#0284C7] rounded-xl"
                     />
-                  )}
-
-                  {field.originalValue && (
-                    <p className="text-xs text-[#7DD3FC]">
-                      Original: <span className="font-mono">{String(field.originalValue)}</span>
-                    </p>
                   )}
                 </div>
               ))}
